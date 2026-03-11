@@ -37,18 +37,38 @@ define([], function() {
     }
 
     /**
-     * Initialise the video picker: card selection, search, submit fix.
+     * Find radio inputs for submission_type (Moodle may add prefix to name).
+     * @param {HTMLFormElement} form
+     * @returns {Array}
+     */
+    function findTypeRadios(form) {
+        if (!form) {
+            return [];
+        }
+        var all = form.querySelectorAll('input[type="radio"]');
+        var out = [];
+        for (var n = 0; n < all.length; n++) {
+            var name = all[n].getAttribute('name') || '';
+            if (name.indexOf('submission_type') !== -1) {
+                out.push(all[n]);
+            }
+        }
+        return out;
+    }
+
+    /**
+     * Initialise the video picker: card selection, search, submit fix, show/hide list by method.
      */
     function init() {
-        var wrapper = document.querySelector('.streamassign-myvideos-wrapper');
-        if (!wrapper) {
+        var section = document.querySelector('.streamassign-myvideos-section');
+        if (!section) {
             return;
         }
-        var list = wrapper.querySelector('.streamassign-existing-videos-list');
+        var list = section.querySelector('.streamassign-existing-videos-list');
         if (!list) {
             return;
         }
-        var form = wrapper.closest('form');
+        var form = section.closest('form');
         if (!form) {
             return;
         }
@@ -57,7 +77,25 @@ define([], function() {
             return;
         }
 
-        var searchInput = wrapper.querySelector('.streamassign-video-search');
+        var typeRadios = findTypeRadios(form);
+
+        function updateSectionVisibility() {
+            var isExisting = false;
+            for (var r = 0; r < typeRadios.length; r++) {
+                if (typeRadios[r].checked && typeRadios[r].value === 'existing') {
+                    isExisting = true;
+                    break;
+                }
+            }
+            section.style.display = isExisting ? '' : 'none';
+        }
+
+        updateSectionVisibility();
+        for (var r = 0; r < typeRadios.length; r++) {
+            typeRadios[r].addEventListener('change', updateSectionVisibility);
+        }
+
+        var searchInput = section.querySelector('.streamassign-video-search');
 
         function filterCards() {
             var q = (searchInput && searchInput.value) ? searchInput.value.trim().toLowerCase() : '';

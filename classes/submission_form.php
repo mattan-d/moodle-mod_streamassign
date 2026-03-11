@@ -51,16 +51,15 @@ class submission_form extends \moodleform {
             $radios[] = $mform->createElement('radio', 'submission_type', '', get_string('selectexisting', 'streamassign'), 'existing');
             $radios[] = $mform->createElement('radio', 'submission_type', '', get_string('uploadnew', 'streamassign'), 'upload');
             $mform->addGroup($radios, 'submission_type_group', '', ['<br>'], false);
-            $mform->setDefault('submission_type', 'existing');
+            $mform->setDefault('submission_type_group', 'upload');
 
             $mform->addElement('hidden', 'existing_video_id', 0);
             $mform->setType('existing_video_id', PARAM_INT);
-            $mform->addElement('static', 'myvideos_label', get_string('myvideos', 'streamassign'), '');
-            $mform->addHelpButton('myvideos_label', 'myvideos', 'streamassign');
 
             $searchplaceholder = get_string('searchmyvideos', 'streamassign');
             $selectedlabel = get_string('selected', 'streamassign');
-            $listhtml = '<div class="streamassign-myvideos-wrapper">';
+            $listhtml = '<div class="streamassign-myvideos-section" id="streamassign-myvideos-section" style="display:none;">';
+            $listhtml .= '<p class="streamassign-myvideos-label"><strong>' . get_string('myvideos', 'streamassign') . '</strong></p>';
             $listhtml .= '<input type="text" class="streamassign-video-search form-control" id="streamassign-video-search" placeholder="' . s($searchplaceholder) . '" autocomplete="off">';
             $listhtml .= '<div class="streamassign-existing-videos-list" id="streamassign-existing-videos-list">';
             foreach ($uservideos as $v) {
@@ -91,10 +90,9 @@ class submission_form extends \moodleform {
                 $listhtml .= '<span class="streamassign-video-card-inner">' . $thumbhtml . '<span class="streamassign-video-title">' . s($title) . '</span></span>';
                 $listhtml .= '</label>';
             }
-            $listhtml .= '</div></div>';
+            $listhtml .= '</div></div></div>';
             $mform->addElement('html', $listhtml);
             $mform->disabledIf('existing_video_id', 'submission_type_group', 'neq', 'existing');
-            $mform->disabledIf('myvideos_label', 'submission_type_group', 'neq', 'existing');
         } else {
             $mform->addElement('static', 'noexisting', '', get_string('noexistingvideos', 'streamassign'));
         }

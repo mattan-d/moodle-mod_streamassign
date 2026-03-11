@@ -1,6 +1,10 @@
 /* Stream assignment: existing videos list (thumbnails grid) */
-.streamassign-myvideos-wrapper {
+.streamassign-myvideos-section {
     margin: 1rem 0;
+}
+
+.streamassign-myvideos-label {
+    margin-bottom: 0.5rem;
 }
 
 .streamassign-video-search {
