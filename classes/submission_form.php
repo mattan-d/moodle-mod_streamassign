@@ -51,7 +51,7 @@ class submission_form extends \moodleform {
             $radios[] = $mform->createElement('radio', 'submission_type', '', get_string('selectexisting', 'streamassign'), 'existing');
             $radios[] = $mform->createElement('radio', 'submission_type', '', get_string('uploadnew', 'streamassign'), 'upload');
             $mform->addGroup($radios, 'submission_type_group', '', ['<br>'], false);
-            $mform->setDefault('submission_type_group', 'upload');
+            $mform->setDefault('submission_type', 'upload');
 
             $mform->addElement('hidden', 'existing_video_id', 0);
             $mform->setType('existing_video_id', PARAM_INT);

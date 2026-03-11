@@ -27,22 +27,32 @@ defined('MOODLE_INTERNAL') || die();
  */
 function streamassign_supports($feature) {
     switch ($feature) {
-        case FEATURE_MOD_ARCHETYPE:
-            return MOD_ARCHETYPE_ASSIGNMENT;
+        case FEATURE_GROUPS:
+            return true;
+        case FEATURE_GROUPINGS:
+            return true;
         case FEATURE_MOD_INTRO:
             return true;
-        case FEATURE_SHOW_DESCRIPTION:
+        case FEATURE_COMPLETION_TRACKS_VIEWS:
+            return true;
+        case FEATURE_COMPLETION_HAS_RULES:
             return true;
         case FEATURE_GRADE_HAS_GRADE:
             return true;
+        case FEATURE_GRADE_OUTCOMES:
+            return true;
         case FEATURE_BACKUP_MOODLE2:
             return true;
-        case FEATURE_COMPLETION_HAS_RULES:
-            return false;
-        case FEATURE_GROUPS:
-            return false;
-        case FEATURE_GROUPINGS:
-            return false;
+        case FEATURE_SHOW_DESCRIPTION:
+            return true;
+        case FEATURE_ADVANCED_GRADING:
+            return true;
+        case FEATURE_PLAGIARISM:
+            return true;
+        case FEATURE_COMMENT:
+            return true;
+        case FEATURE_MOD_PURPOSE:
+            return MOD_PURPOSE_ASSESSMENT;
         default:
             return null;
     }

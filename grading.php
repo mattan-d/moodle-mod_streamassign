@@ -136,11 +136,13 @@ if ($totalcount > $perpage) {
 
 echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('grading', 'streamassign'), 2);
+echo html_writer::start_tag('div', ['class' => 'streamassign-grading-back-wrap mt-3 mb-4']);
 echo $OUTPUT->single_button(
     new moodle_url('/mod/streamassign/view.php', ['id' => $cm->id]),
     get_string('backtoactivity', 'streamassign'),
     'get'
 );
+echo html_writer::end_tag('div');
 
 // Initials bar: filter by first letter of firstname / lastname (like Moodle core assign).
 $urlfirst = clone $baseurl;

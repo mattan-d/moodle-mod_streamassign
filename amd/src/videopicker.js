@@ -90,6 +90,23 @@ define([], function() {
             section.style.display = isExisting ? '' : 'none';
         }
 
+        // Ensure "Upload a new video" is selected by default if nothing is checked (e.g. Moodle prefix).
+        var noneChecked = true;
+        for (var r = 0; r < typeRadios.length; r++) {
+            if (typeRadios[r].checked) {
+                noneChecked = false;
+                break;
+            }
+        }
+        if (noneChecked) {
+            for (var r = 0; r < typeRadios.length; r++) {
+                if (typeRadios[r].value === 'upload') {
+                    typeRadios[r].checked = true;
+                    break;
+                }
+            }
+        }
+
         updateSectionVisibility();
         for (var r = 0; r < typeRadios.length; r++) {
             typeRadios[r].addEventListener('change', updateSectionVisibility);
