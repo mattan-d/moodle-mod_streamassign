@@ -1,0 +1,10 @@
+{{!
+    Submission info: submitted date, optional watch link.
+}}
+<div class="streamassign-submission-info">
+    <p>{{submittedon}}</p>
+    <p>{{videotitle}}</p>
+    {{#watchurl}}
+    <p><a href="{{watchurl}}" class="btn btn-primary" target="_blank" rel="noopener">{{watchlabel}}</a></p>
+    {{/watchurl}}
+</div>

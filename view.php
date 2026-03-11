@@ -1,0 +1,122 @@
+<?php
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle. If not, see <http://www.gnu.org/licenses/>.
+
+/**
+ * Stream assignment view and submission.
+ *
+ * @package    mod_streamassign
+ * @copyright  2025 mattandor <mattan@centricapp.co.il>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+require_once(__DIR__ . '/../../config.php');
+require_once(__DIR__ . '/lib.php');
+require_once(__DIR__ . '/locallib.php');
+
+global $DB, $USER, $PAGE, $OUTPUT;
+
+$id = optional_param('id', 0, PARAM_INT);
+$n  = optional_param('n', 0, PARAM_INT);
+
+if ($id) {
+    $cm = get_coursemodule_from_id('streamassign', $id, 0, false, MUST_EXIST);
+    $course = $DB->get_record('course', ['id' => $cm->course], '*', MUST_EXIST);
+    $streamassign = $DB->get_record('streamassign', ['id' => $cm->instance], '*', MUST_EXIST);
+} else if ($n) {
+    $streamassign = $DB->get_record('streamassign', ['id' => $n], '*', MUST_EXIST);
+    $course = $DB->get_record('course', ['id' => $streamassign->course], '*', MUST_EXIST);
+    $cm = get_coursemodule_from_instance('streamassign', $streamassign->id, $course->id, false, MUST_EXIST);
+} else {
+    throw new \moodle_exception('invalidcoursemodule');
+}
+
+require_login($course, true, $cm);
+
+$context = context_module::instance($cm->id);
+require_capability('mod/streamassign:view', $context);
+
+$PAGE->set_url('/mod/streamassign/view.php', ['id' => $cm->id]);
+$PAGE->set_title(format_string($streamassign->name));
+$PAGE->set_heading(format_string($course->fullname));
+
+$timenow = time();
+$canedit = has_capability('mod/streamassign:addinstance', $context);
+$opens = $streamassign->timeopen > 0 && $timenow < $streamassign->timeopen;
+$closed = $streamassign->timeclose > 0 && $timenow > $streamassign->timeclose;
+$cansubmit = has_capability('mod/streamassign:submit', $context) && !$opens && !$closed;
+
+$submission = streamassign_get_submission((int) $streamassign->id, (int) $USER->id);
+$streamurl = \mod_streamassign\stream_uploader::get_stream_base_url();
+$streamconfigured = \mod_streamassign\stream_uploader::is_configured();
+
+// Build submission form once so validation errors are shown on same form.
+$submissionform = null;
+if ($cansubmit && $streamconfigured) {
+    $customdata = (object) ['context' => $context, 'cmid' => $cm->id];
+    $submissionform = new \mod_streamassign\submission_form($PAGE->url, $customdata);
+    if ($submissionform->is_cancelled()) {
+        redirect($PAGE->url);
+    }
+    if ($fromform = $submissionform->get_data()) {
+        $draftid = $fromform->video_file ?? 0;
+        $videotitle = $fromform->videotitle ?? '';
+        if ($draftid) {
+            $uploadresult = streamassign_handle_upload($context, $streamassign, $cm, $draftid, $videotitle);
+            if ($uploadresult->success) {
+                redirect($PAGE->url, get_string('uploadsuccess', 'streamassign'), null, \core\output\notification::NOTIFY_SUCCESS);
+            } else {
+                redirect($PAGE->url, $uploadresult->message, null, \core\output\notification::NOTIFY_ERROR);
+            }
+        }
+    }
+}
+
+echo $OUTPUT->header();
+
+if (trim(strip_tags($streamassign->intro))) {
+    echo $OUTPUT->box(format_module_intro('streamassign', $streamassign, $cm->id), 'generalbox', 'intro');
+}
+
+if ($opens) {
+    echo $OUTPUT->notification(get_string('activitynotavailableyet', 'streamassign', userdate($streamassign->timeopen)), 'notifyinfo');
+}
+if ($closed) {
+    echo $OUTPUT->notification(get_string('activityclosed', 'streamassign', userdate($streamassign->timeclose)), 'notifyinfo');
+}
+
+if (!$streamconfigured) {
+    echo $OUTPUT->notification(get_string('streamurl_required', 'streamassign'), 'notifyproblem');
+}
+
+if ($submission) {
+    echo $OUTPUT->heading(get_string('yoursubmission', 'streamassign'), 3);
+    $watchurl = $streamurl ? $streamurl . '/watch/' . $submission->streamid : '';
+    $submissioninfo = [
+        'submittedon' => get_string('submittedon', 'streamassign') . ' ' . userdate($submission->timemodified),
+        'videotitle' => get_string('videotitle', 'streamassign') . ': ' . s($submission->videotitle ?: '-'),
+    ];
+    if ($watchurl) {
+        $submissioninfo['watchurl'] = $watchurl;
+        $submissioninfo['watchlabel'] = get_string('watchvideo', 'streamassign');
+    }
+    echo $OUTPUT->render_from_template('mod_streamassign/submission_info', $submissioninfo);
+}
+
+if ($cansubmit && $streamconfigured && $submissionform) {
+    if (!$submission) {
+        echo $OUTPUT->heading(get_string('submitvideo', 'streamassign'), 3);
+    } else if (!$canedit) {
+        echo $OUTPUT->notification(get_string('allowedformats', 'streamassign'), 'notifyinfo');
+    }
+    $submissionform->display();
+}
+
+echo $OUTPUT->footer();

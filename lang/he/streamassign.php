@@ -1,0 +1,48 @@
+<?php
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle. If not, see <http://www.gnu.org/licenses/>.
+
+/**
+ * Hebrew strings for mod_streamassign.
+ *
+ * @package    mod_streamassign
+ * @copyright  2025 mattandor <mattan@centricapp.co.il>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+$string['modulename'] = 'הגשת מטלה Stream';
+$string['modulenameplural'] = 'הגשת מטלות Stream';
+$string['modulename_help'] = 'הסטודנט מגיש קובץ וידאו שמועלה למערכת Stream החיצונית.';
+$string['pluginname'] = 'הגשת מטלה Stream';
+$string['pluginadministration'] = 'ניהול הגשת מטלה Stream';
+$string['streamassign:view'] = 'צפייה במטלת Stream';
+$string['streamassign:submit'] = 'הגשת וידאו למטלת Stream';
+$string['streamassign:addinstance'] = 'הוספת מטלת Stream';
+$string['streamassign:grade'] = 'ציון מטלת Stream';
+
+$string['streamassignsettings'] = 'הגדרות הגשת מטלה Stream';
+$string['streamurl_required'] = 'כתובת Stream ומפתח API חייבים להיות מוגדרים בתוסף local_stream (ניהול אתר → תוספים → תוספים מקומיים → Stream).';
+$string['submitvideo'] = 'הגשת וידאו';
+$string['submission'] = 'הגשה';
+$string['nosubmission'] = 'טרם הוגש';
+$string['yoursubmission'] = 'ההגשה שלך';
+$string['submittedon'] = 'הוגש בתאריך';
+$string['watchvideo'] = 'צפייה בוידאו';
+$string['uploadvideo'] = 'העלאת וידאו';
+$string['videotitle'] = 'כותרת הוידאו (אופציונלי)';
+$string['videotitle_help'] = 'כותרת הוידאו במערכת Stream. אם ריק, ישתמש בשם הקובץ.';
+$string['allowedformats'] = 'פורמטים נתמכים: MP4, WebM, MKV, AVI, MOV ופורמטי וידאו נפוצים אחרים.';
+$string['uploadsuccess'] = 'הוידאו הועלה בהצלחה ל-Stream.';
+$string['uploaderror'] = 'ההעלאה נכשלה';
+$string['activitynotavailableyet'] = 'פעילות זו אינה זמינה עד {$a}.';
+$string['activityclosed'] = 'פעילות זו נסגרה ב-{$a}.';
+$string['nostreamassignments'] = 'אין מטלות Stream';
+$string['privacy:metadata:streamassign_submission'] = 'מאחסן את מזהה הוידאו ב-Stream וזמן ההגשה לכל משתמש.';
+$string['privacy:metadata:streamplatform'] = 'קבצי וידאו מועלים למערכת Stream חיצונית; אימייל ושם משתמש עשויים להישלח לצורכי בעלות.';
