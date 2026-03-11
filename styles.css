@@ -1,3 +1,9 @@
+/* Grading page: spacing around "Back to activity" button */
+.streamassign-grading-back-wrap {
+    margin-top: 1rem;
+    margin-bottom: 1.5rem;
+}
+
 /* Stream assignment: existing videos list (thumbnails grid) */
 .streamassign-myvideos-section {
     margin: 1rem 0;
