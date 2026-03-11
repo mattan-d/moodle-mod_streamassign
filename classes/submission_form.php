@@ -14,6 +14,7 @@ namespace mod_streamassign;
 defined('MOODLE_INTERNAL') || die();
 
 require_once($GLOBALS['CFG']->libdir . '/formslib.php');
+require_once($GLOBALS['CFG']->dirroot . '/repository/lib.php');
 
 /**
  * Submission form: one video file + optional title.
@@ -44,7 +45,7 @@ class submission_form extends \moodleform {
         $options = [
             'maxfiles' => 1,
             'accepted_types' => ['video'],
-            'return_types' => FILE_INTERNAL,
+            'return_types' => \FILE_INTERNAL,
         ];
         $mform->addElement('filemanager', 'video_file', get_string('uploadvideo', 'streamassign'), null, $options);
         $mform->addRule('video_file', get_string('required'), 'required', null, 'client');

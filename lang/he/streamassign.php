@@ -46,3 +46,18 @@ $string['activityclosed'] = 'פעילות זו נסגרה ב-{$a}.';
 $string['nostreamassignments'] = 'אין מטלות Stream';
 $string['privacy:metadata:streamassign_submission'] = 'מאחסן את מזהה הוידאו ב-Stream וזמן ההגשה לכל משתמש.';
 $string['privacy:metadata:streamplatform'] = 'קבצי וידאו מועלים למערכת Stream חיצונית; אימייל ושם משתמש עשויים להישלח לצורכי בעלות.';
+
+// Settings page - connection status
+$string['connectionstatus'] = 'סטטוס חיבור ל-Stream';
+$string['connection_streamurl'] = 'כתובת Stream (local_stream):';
+$string['connection_apikey'] = 'מפתח API (local_stream):';
+$string['connection_configured'] = 'מוגדר';
+$string['connection_notset'] = 'לא הוגדר';
+$string['connection_reach'] = 'נגישות שרת:';
+$string['connection_ok'] = 'תקין';
+$string['connection_failed'] = 'לא ניתן להגיע לשרת (בדוק כתובת או רשת)';
+$string['connection_ready'] = 'Stream מוגדר ונגיש. התוסף מוכן לשימוש.';
+$string['connection_configured_not_reachable'] = 'כתובת Stream ומפתח API מוגדרים, אך לא ניתן היה להגיע לשרת Stream.';
+$string['connection_not_configured'] = 'Stream לא מוגדר. הגדר כתובת Stream ומפתח API בתוסף local_stream (ניהול אתר → תוספים → תוספים מקומיים → Stream).';
+$string['connectioninfo'] = 'אודות הגדרות Stream';
+$string['connectioninfo_desc'] = 'פעילות זו משתמשת בכתובת Stream ובמפתח API מתוסף local_stream. לשינוי, עבור לניהול אתר → תוספים → תוספים מקומיים → Stream.';

@@ -35,13 +35,14 @@ require_once(__DIR__ . '/classes/stream_uploader.php');
 function streamassign_handle_upload($context, $streamassign, $cm, $draftid, $videotitle = '') {
     global $USER, $DB;
 
-    $result = (object) ['success' => false, 'message' => ''];
+    $result = (object) ['success' => false, 'message' => '', 'debuginfo' => ''];
 
     $fs = get_file_storage();
     $usercontext = context_user::instance($USER->id);
     $files = $fs->get_area_files($usercontext->id, 'user', 'draft', $draftid, 'id', false);
     if (empty($files)) {
         $result->message = get_string('uploaderror', 'streamassign');
+        $result->debuginfo = 'no_file_in_draft';
         return $result;
     }
     $file = reset($files);
@@ -50,12 +51,14 @@ function streamassign_handle_upload($context, $streamassign, $cm, $draftid, $vid
     $allowed = ['mp4', 'flv', 'webm', 'mkv', 'vob', 'ogv', 'ogg', 'avi', 'wmv', 'mov', 'mpeg', 'mpg'];
     if (!in_array($ext, $allowed)) {
         $result->message = get_string('uploaderror', 'streamassign') . ' ' . get_string('allowedformats', 'streamassign');
+        $result->debuginfo = 'invalid_extension: ' . $ext;
         return $result;
     }
 
     $temp = $file->copy_content_to_temp();
     if ($temp === false) {
         $result->message = get_string('uploaderror', 'streamassign');
+        $result->debuginfo = 'copy_content_to_temp_failed';
         return $result;
     }
 
@@ -75,6 +78,7 @@ function streamassign_handle_upload($context, $streamassign, $cm, $draftid, $vid
 
     if (!$upload->success) {
         $result->message = $upload->message;
+        $result->debuginfo = isset($upload->debuginfo) ? $upload->debuginfo : '';
         return $result;
     }
 

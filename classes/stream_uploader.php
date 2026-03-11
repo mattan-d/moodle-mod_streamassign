@@ -69,17 +69,19 @@ class stream_uploader {
         array $metadata = [],
         ?string $title = null
     ): \stdClass {
-        $result = (object) ['success' => false, 'message' => ''];
+        $result = (object) ['success' => false, 'message' => '', 'debuginfo' => ''];
 
         $baseurl = self::get_stream_base_url();
         $apikey = self::get_stream_api_key();
         if (!$baseurl || !$apikey) {
             $result->message = get_string('streamurl_required', 'streamassign');
+            $result->debuginfo = 'streamurl=' . ($baseurl ? 'set' : 'missing') . ', apikey=' . ($apikey ? 'set' : 'missing');
             return $result;
         }
 
         if (!is_readable($filepath)) {
             $result->message = get_string('uploaderror', 'streamassign');
+            $result->debuginfo = 'file_not_readable: ' . $filepath;
             return $result;
         }
 
@@ -125,16 +127,27 @@ class stream_uploader {
 
         $response = curl_exec($ch);
         $httpcode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlerr = curl_error($ch);
         curl_close($ch);
 
         $data = json_decode($response, true);
+        $debugparts = ['HTTP ' . $httpcode];
+        if ($curlerr !== '') {
+            $debugparts[] = 'cURL: ' . $curlerr;
+        }
+        if (is_string($response) && $response !== '') {
+            $debugparts[] = 'response: ' . s(mb_substr($response, 0, 500));
+        }
+
         if (!is_array($data)) {
             $result->message = get_string('uploaderror', 'streamassign');
+            $result->debuginfo = implode('; ', $debugparts);
             return $result;
         }
 
         if (!empty($data['error'])) {
             $result->message = isset($data['message']) ? $data['message'] : get_string('uploaderror', 'streamassign');
+            $result->debuginfo = implode('; ', $debugparts);
             return $result;
         }
 
@@ -145,6 +158,7 @@ class stream_uploader {
             $result->thumbnail = $data['thumbnail'] ?? '';
         } else {
             $result->message = isset($data['message']) ? $data['message'] : get_string('uploaderror', 'streamassign');
+            $result->debuginfo = implode('; ', $debugparts);
         }
 
         return $result;

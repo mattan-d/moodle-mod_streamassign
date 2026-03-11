@@ -73,7 +73,14 @@ if ($cansubmit && $streamconfigured) {
             if ($uploadresult->success) {
                 redirect($PAGE->url, get_string('uploadsuccess', 'streamassign'), null, \core\output\notification::NOTIFY_SUCCESS);
             } else {
-                redirect($PAGE->url, $uploadresult->message, null, \core\output\notification::NOTIFY_ERROR);
+                $errmsg = get_string('uploaderror', 'streamassign');
+                if ($uploadresult->message !== '') {
+                    $errmsg .= ': ' . $uploadresult->message;
+                }
+                if (!empty($uploadresult->debuginfo) && debugging('', DEBUG_DEVELOPER)) {
+                    $errmsg .= ' [' . s($uploadresult->debuginfo) . ']';
+                }
+                redirect($PAGE->url, $errmsg, null, \core\output\notification::NOTIFY_ERROR);
             }
         }
     }

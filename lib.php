@@ -28,7 +28,7 @@ defined('MOODLE_INTERNAL') || die();
 function streamassign_supports($feature) {
     switch ($feature) {
         case FEATURE_MOD_ARCHETYPE:
-            return MOD_ARCHETYPE_ACTIVITY;
+            return MOD_ARCHETYPE_ASSIGNMENT;
         case FEATURE_MOD_INTRO:
             return true;
         case FEATURE_SHOW_DESCRIPTION:
@@ -110,10 +110,11 @@ function streamassign_delete_instance($id) {
  */
 function streamassign_get_submission(int $streamassignid, int $userid): ?\stdClass {
     global $DB;
-    return $DB->get_record('streamassign_submission', [
+    $record = $DB->get_record('streamassign_submission', [
         'streamassignid' => $streamassignid,
         'userid' => $userid,
     ]);
+    return $record ?: null;
 }
 
 /**

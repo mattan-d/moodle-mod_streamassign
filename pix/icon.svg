@@ -1,0 +1,6 @@
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMid meet">
+  <!-- Video frame with play - blue -->
+  <path fill-rule="evenodd" clip-rule="evenodd" d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6zm2.5 1.5v5l4-2.5-4-2.5z" fill="#0d6efd"/>
+  <!-- Upload arrow - green -->
+  <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2.25a.75.75 0 0 1 .53.22l2.25 2.25a.75.75 0 0 1-1.06 1.06L12.75 4.81v3.44a.75.75 0 0 1-1.5 0V4.81L9.78 5.58a.75.75 0 0 1-1.06-1.06l2.25-2.25a.75.75 0 0 1 .53-.22z" fill="#198754"/>
+</svg>

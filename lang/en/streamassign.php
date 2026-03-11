@@ -46,3 +46,18 @@ $string['activityclosed'] = 'This activity closed on {$a}.';
 $string['nostreamassignments'] = 'No Stream assignments';
 $string['privacy:metadata:streamassign_submission'] = 'Stores the Stream video ID and submission time for each user.';
 $string['privacy:metadata:streamplatform'] = 'Video files are uploaded to an external Stream platform; user email and name may be sent for ownership.';
+
+// Settings page - connection status
+$string['connectionstatus'] = 'Stream connection status';
+$string['connection_streamurl'] = 'Stream URL (local_stream):';
+$string['connection_apikey'] = 'API key (local_stream):';
+$string['connection_configured'] = 'Configured';
+$string['connection_notset'] = 'Not set';
+$string['connection_reach'] = 'Reachability:';
+$string['connection_ok'] = 'OK';
+$string['connection_failed'] = 'Could not reach server (check URL or network)';
+$string['connection_ready'] = 'Stream is configured and reachable. The plugin is ready to use.';
+$string['connection_configured_not_reachable'] = 'Stream URL and API key are set, but the Stream server could not be reached.';
+$string['connection_not_configured'] = 'Stream is not configured. Configure Stream URL and API key in the local_stream plugin (Site administration → Plugins → Local plugins → Stream).';
+$string['connectioninfo'] = 'About Stream settings';
+$string['connectioninfo_desc'] = 'This activity uses the Stream URL and API key from the local_stream plugin. To change them, go to Site administration → Plugins → Local plugins → Stream.';
