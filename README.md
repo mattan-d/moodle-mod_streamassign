@@ -119,4 +119,4 @@ Grading table with thumbnails, grades, feedback, filters, and Save grades.
 ## License
 
 GPL v3 or later.  
-Copyright (c) 2025 mattandor.
+Copyright (c) 2025 CentricApp LTD. Dev Team. dev@centricapp.co

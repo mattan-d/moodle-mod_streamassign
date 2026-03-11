@@ -13,7 +13,7 @@
  * English strings for mod_streamassign.
  *
  * @package    mod_streamassign
- * @copyright  2025 mattandor <mattan@centricapp.co.il>
+ * @copyright  2025 CentricApp LTD, Dev Team (dev@centricapp.co)
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 

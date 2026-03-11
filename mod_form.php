@@ -17,7 +17,7 @@ require_once($CFG->dirroot . '/course/moodleform_mod.php');
  * Stream assignment instance form.
  *
  * @package    mod_streamassign
- * @copyright  2025 mattandor <mattan@centricapp.co.il>
+ * @copyright  2025 CentricApp LTD, Dev Team (dev@centricapp.co)
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class mod_streamassign_mod_form extends moodleform_mod {
