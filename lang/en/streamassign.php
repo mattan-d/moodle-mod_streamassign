@@ -61,3 +61,12 @@ $string['connection_configured_not_reachable'] = 'Stream URL and API key are set
 $string['connection_not_configured'] = 'Stream is not configured. Configure Stream URL and API key in the local_stream plugin (Site administration → Plugins → Local plugins → Stream).';
 $string['connectioninfo'] = 'About Stream settings';
 $string['connectioninfo_desc'] = 'This activity uses the Stream URL and API key from the local_stream plugin. To change them, go to Site administration → Plugins → Local plugins → Stream.';
+
+// Grading
+$string['grading'] = 'Grading submissions';
+$string['viewgrading'] = 'Grade submissions';
+$string['savegrades'] = 'Save grades';
+$string['gradesupdated'] = 'Grades saved.';
+$string['nosubmissionsgrading'] = 'No submissions to grade.';
+$string['backtoactivity'] = 'Back to activity';
+$string['feedback'] = 'Feedback';

@@ -102,6 +102,51 @@ function streamassign_delete_instance($id) {
 }
 
 /**
+ * Get all submissions for an activity (for grading table).
+ *
+ * @param int $streamassignid
+ * @param int $courseid
+ * @return array indexed by userid, each element has submission + user + currentgrade
+ */
+function streamassign_get_submissions_for_grading(int $streamassignid, int $courseid): array {
+    global $DB, $CFG;
+    require_once($CFG->libdir . '/gradelib.php');
+
+    $submissions = $DB->get_records('streamassign_submission', ['streamassignid' => $streamassignid], 'timemodified DESC');
+    if (empty($submissions)) {
+        return [];
+    }
+    $userids = array_unique(array_column($submissions, 'userid'));
+    $users = $DB->get_records_list('user', 'id', $userids, '', 'id, firstname, lastname, email');
+    $gradinginfo = grade_get_grades($courseid, 'mod', 'streamassign', $streamassignid, $userids);
+    $gradesbyuser = [];
+    if (!empty($gradinginfo->items) && isset($gradinginfo->items[0]->grades)) {
+        foreach ($gradinginfo->items[0]->grades as $uid => $g) {
+            $gradesbyuser[$uid] = (object) [
+                'grade' => $g->grade,
+                'feedback' => $g->feedback ?? '',
+            ];
+        }
+    }
+    $out = [];
+    foreach ($submissions as $s) {
+        $u = $users[$s->userid] ?? null;
+        if (!$u) {
+            continue;
+        }
+        $gi = $gradesbyuser[$s->userid] ?? null;
+        $out[$s->userid] = (object) [
+            'submission' => $s,
+            'user' => $u,
+            'fullname' => fullname($u),
+            'currentgrade' => $gi ? $gi->grade : null,
+            'currentfeedback' => $gi ? $gi->feedback : '',
+        ];
+    }
+    return $out;
+}
+
+/**
  * Get submission for a user (latest).
  *
  * @param int $streamassignid
@@ -163,19 +208,22 @@ function streamassign_grade_item_update($streamassign, $grades = null, $delete =
 }
 
 /**
- * Update grades for a user (e.g. when teacher sets grade).
+ * Update grades for a user (e.g. when teacher sets grade and/or feedback).
  *
  * @param stdClass $streamassign
  * @param int $userid
  * @param float|null $rawgrade
+ * @param string|null $feedback
+ * @param int $feedbackformat FORMAT_PLAIN, FORMAT_HTML, etc.
  */
-function streamassign_update_grades($streamassign, $userid, $rawgrade = null) {
-    if (empty($streamassign->grade)) {
-        return;
-    }
+function streamassign_update_grades($streamassign, $userid, $rawgrade = null, $feedback = null, $feedbackformat = FORMAT_PLAIN) {
     $grades = new \stdClass();
     $grades->userid = $userid;
     $grades->rawgrade = $rawgrade;
+    if ($feedback !== null) {
+        $grades->feedback = $feedback;
+        $grades->feedbackformat = $feedbackformat;
+    }
     streamassign_grade_item_update($streamassign, $grades);
 }
 

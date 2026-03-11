@@ -61,3 +61,12 @@ $string['connection_configured_not_reachable'] = 'כתובת Stream ומפתח A
 $string['connection_not_configured'] = 'Stream לא מוגדר. הגדר כתובת Stream ומפתח API בתוסף local_stream (ניהול אתר → תוספים → תוספים מקומיים → Stream).';
 $string['connectioninfo'] = 'אודות הגדרות Stream';
 $string['connectioninfo_desc'] = 'פעילות זו משתמשת בכתובת Stream ובמפתח API מתוסף local_stream. לשינוי, עבור לניהול אתר → תוספים → תוספים מקומיים → Stream.';
+
+// Grading
+$string['grading'] = 'ציון הגשות';
+$string['viewgrading'] = 'צפייה והערכת הגשות';
+$string['savegrades'] = 'שמירת ציונים';
+$string['gradesupdated'] = 'הציונים נשמרו.';
+$string['nosubmissionsgrading'] = 'אין הגשות לציון.';
+$string['backtoactivity'] = 'חזרה לפעילות';
+$string['feedback'] = 'הערות';

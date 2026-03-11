@@ -1,10 +1,23 @@
 {{!
-    Submission info: submitted date, optional watch link.
+    Submission info: submitted date, embed iframe (JWT) and/or watch link.
 }}
 <div class="streamassign-submission-info">
     <p>{{submittedon}}</p>
     <p>{{videotitle}}</p>
+    {{#embedurl}}
+    <div class="streamassign-embed-wrapper" style="max-width: 100%; margin: 1rem 0;">
+        <iframe
+            src="{{embedurl}}"
+            width="{{embedwidth}}"
+            height="{{embedheight}}"
+            allowfullscreen
+            allow="autoplay; fullscreen"
+            title="{{embedtitle}}"
+            class="streamassign-embed-iframe"
+            style="border: 0; border-radius: 4px;"></iframe>
+    </div>
+    {{/embedurl}}
     {{#watchurl}}
-    <p><a href="{{watchurl}}" class="btn btn-primary" target="_blank" rel="noopener">{{watchlabel}}</a></p>
+    <p><a href="{{watchurl}}" class="btn btn-secondary" target="_blank" rel="noopener">{{watchlabel}}</a></p>
     {{/watchurl}}
 </div>

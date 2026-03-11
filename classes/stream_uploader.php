@@ -53,6 +53,54 @@ class stream_uploader {
     }
 
     /**
+     * Build embed URL with JWT for viewing a video (including privacy "identifier").
+     * Uses HS256 with Stream API key; payload: fullname, email, identifier (= videoid), nbf, exp.
+     *
+     * @param int $videoid Stream video ID
+     * @param \stdClass $user Moodle user (firstname, lastname, email, idnumber)
+     * @param int $validityseconds Token validity in seconds (default 2 hours)
+     * @return string|null Full URL to embed with token, or null if not configured
+     */
+    public static function get_embed_url_with_jwt(int $videoid, \stdClass $user, int $validityseconds = 7200): ?string {
+        $baseurl = self::get_stream_base_url();
+        $apikey = self::get_stream_api_key();
+        if (!$baseurl || !$apikey) {
+            return null;
+        }
+
+        $fullname = trim(($user->firstname ?? '') . ' ' . ($user->lastname ?? ''));
+        if ($fullname === '') {
+            $fullname = $user->username ?? 'User';
+        }
+        $email = strtolower(trim($user->email ?? ''));
+        if ($email === '') {
+            return null;
+        }
+
+        $now = time();
+        $payload = [
+            'fullname' => $fullname,
+            'email' => $email,
+            'identifier' => $videoid,
+            'matricula' => $user->idnumber ?? '',
+            'nbf' => $now,
+            'exp' => $now + $validityseconds,
+        ];
+
+        try {
+            $libjwt = $GLOBALS['CFG']->dirroot . '/lib/php-jwt/src/JWT.php';
+            if (is_readable($libjwt)) {
+                require_once($libjwt);
+            }
+            $jwt = \Firebase\JWT\JWT::encode($payload, $apikey, 'HS256');
+        } catch (\Throwable $e) {
+            return null;
+        }
+
+        return $baseurl . '/embed/' . $videoid . '?token=' . $jwt;
+    }
+
+    /**
      * Upload a video file to Stream via POST /webservice/api/moodle-upload.
      *
      * @param string $filepath Full path to the video file on disk.

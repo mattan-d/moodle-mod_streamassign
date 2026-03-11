@@ -86,7 +86,18 @@ if ($cansubmit && $streamconfigured) {
     }
 }
 
+$cangrade = has_capability('mod/streamassign:grade', $context);
+
 echo $OUTPUT->header();
+
+if ($cangrade) {
+    echo $OUTPUT->single_button(
+        new moodle_url('/mod/streamassign/grading.php', ['id' => $cm->id]),
+        get_string('viewgrading', 'streamassign'),
+        'get',
+        ['primary' => false]
+    );
+}
 
 if (trim(strip_tags($streamassign->intro))) {
     echo $OUTPUT->box(format_module_intro('streamassign', $streamassign, $cm->id), 'generalbox', 'intro');
@@ -105,11 +116,18 @@ if (!$streamconfigured) {
 
 if ($submission) {
     echo $OUTPUT->heading(get_string('yoursubmission', 'streamassign'), 3);
+    $embedurl = \mod_streamassign\stream_uploader::get_embed_url_with_jwt((int) $submission->streamid, $USER, 7200);
     $watchurl = $streamurl ? $streamurl . '/watch/' . $submission->streamid : '';
     $submissioninfo = [
         'submittedon' => get_string('submittedon', 'streamassign') . ' ' . userdate($submission->timemodified),
         'videotitle' => get_string('videotitle', 'streamassign') . ': ' . s($submission->videotitle ?: '-'),
     ];
+    if ($embedurl) {
+        $submissioninfo['embedurl'] = $embedurl;
+        $submissioninfo['embedwidth'] = 640;
+        $submissioninfo['embedheight'] = 360;
+        $submissioninfo['embedtitle'] = get_string('watchvideo', 'streamassign');
+    }
     if ($watchurl) {
         $submissioninfo['watchurl'] = $watchurl;
         $submissioninfo['watchlabel'] = get_string('watchvideo', 'streamassign');
