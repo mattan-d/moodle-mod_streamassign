@@ -147,6 +147,45 @@ function streamassign_get_submissions_for_grading(int $streamassignid, int $cour
 }
 
 /**
+ * Get grading summary counts for the activity (participants, submitted, need grading).
+ * Used on the view page for users with grade capability.
+ *
+ * @param int $streamassignid
+ * @param int $courseid
+ * @param context_module $context
+ * @return stdClass { participantcount, submittedcount, needgradingcount }
+ */
+function streamassign_get_grading_summary(int $streamassignid, int $courseid, context_module $context): \stdClass {
+    global $DB, $CFG;
+    require_once($CFG->libdir . '/gradelib.php');
+
+    list($esql, $params) = get_enrolled_sql($context, 'mod/streamassign:submit', 0, true);
+    $params['streamassignid'] = $streamassignid;
+    $participantcount = $DB->count_records_sql(
+        "SELECT COUNT(DISTINCT u.id) FROM {user} u INNER JOIN ($esql) je ON je.id = u.id",
+        $params
+    );
+
+    $submittedcount = $DB->count_records('streamassign_submission', ['streamassignid' => $streamassignid]);
+
+    $needgradingcount = 0;
+    if ($submittedcount > 0) {
+        $all = streamassign_get_submissions_for_grading($streamassignid, $courseid);
+        foreach ($all as $row) {
+            if ($row->currentgrade === null || $row->currentgrade === '') {
+                $needgradingcount++;
+            }
+        }
+    }
+
+    return (object) [
+        'participantcount' => (int) $participantcount,
+        'submittedcount' => (int) $submittedcount,
+        'needgradingcount' => (int) $needgradingcount,
+    ];
+}
+
+/**
  * Get submission for a user (latest).
  *
  * @param int $streamassignid

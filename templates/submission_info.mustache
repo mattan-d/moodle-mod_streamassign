@@ -1,9 +1,11 @@
 {{!
     Submission info: submitted date, embed iframe (JWT) and/or watch link.
+    When videoready is false, show "processing" and poll checkurl every 30s until thumbnail exists, then show embed.
 }}
 <div class="streamassign-submission-info">
     <p>{{submittedon}}</p>
     <p>{{videotitle}}</p>
+    {{#videoready}}
     {{#embedurl}}
     <div class="streamassign-embed-wrapper" style="max-width: 100%; margin: 1rem 0;">
         <iframe
@@ -17,6 +19,40 @@
             style="border: 0; border-radius: 4px;"></iframe>
     </div>
     {{/embedurl}}
+    {{/videoready}}
+    {{^videoready}}
+    {{#checkurl}}
+    <div id="streamassign-embed-placeholder" class="streamassign-embed-wrapper" data-check-url="{{checkurl}}" data-interval="{{nextcheckseconds}}" style="max-width: 100%; margin: 1rem 0;">
+        <p class="streamassign-video-processing alert alert-info">{{processingmessage}}</p>
+    </div>
+    <script>
+    (function() {
+        var el = document.getElementById('streamassign-embed-placeholder');
+        if (!el) return;
+        var checkUrl = el.getAttribute('data-check-url');
+        var intervalSec = parseInt(el.getAttribute('data-interval'), 10) || 30;
+        var timer = setInterval(function() {
+            fetch(checkUrl).then(function(r) { return r.json(); }).then(function(d) {
+                if (d.ready && d.embed_url) {
+                    clearInterval(timer);
+                    var iframe = document.createElement('iframe');
+                    iframe.src = d.embed_url;
+                    iframe.width = d.embed_width || 640;
+                    iframe.height = d.embed_height || 360;
+                    iframe.title = '{{embedtitle}}';
+                    iframe.allowFullscreen = true;
+                    iframe.setAttribute('allow', 'autoplay; fullscreen');
+                    iframe.className = 'streamassign-embed-iframe';
+                    iframe.style.cssText = 'border: 0; border-radius: 4px;';
+                    el.innerHTML = '';
+                    el.appendChild(iframe);
+                }
+            }).catch(function() {});
+        }, intervalSec * 1000);
+    })();
+    </script>
+    {{/checkurl}}
+    {{/videoready}}
     {{#watchurl}}
     <p><a href="{{watchurl}}" class="btn btn-secondary" target="_blank" rel="noopener">{{watchlabel}}</a></p>
     {{/watchurl}}

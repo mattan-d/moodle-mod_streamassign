@@ -23,6 +23,9 @@ defined('MOODLE_INTERNAL') || die();
  */
 class stream_uploader {
 
+    /** @var array<int, string|null> Cache thumbnail URL per videoid for this request (avoids repeated API calls). */
+    private static $thumbnail_cache = [];
+
     /**
      * Get Stream base URL from local_stream config.
      *
@@ -210,5 +213,102 @@ class stream_uploader {
         }
 
         return $result;
+    }
+
+    /**
+     * Get video thumbnail URL from Stream API (GET /webservice/api/video-thumbnail).
+     * Uses Bearer token (API key) from local_stream. Returns null if not configured or on error.
+     *
+     * @param int $videoid Stream video id (e.g. streamid from submission)
+     * @return string|null Full thumbnail URL, or null on error / not ready
+     */
+    public static function get_video_thumbnail_url(int $videoid): ?string {
+        if ($videoid <= 0) {
+            return null;
+        }
+        if (array_key_exists($videoid, self::$thumbnail_cache)) {
+            return self::$thumbnail_cache[$videoid];
+        }
+
+        $baseurl = self::get_stream_base_url();
+        $apikey = self::get_stream_api_key();
+        if (!$baseurl || !$apikey) {
+            self::$thumbnail_cache[$videoid] = null;
+            return null;
+        }
+
+        $url = $baseurl . '/webservice/api/video-thumbnail?id=' . (int) $videoid;
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_HTTPHEADER => [
+                'Authorization: Bearer ' . $apikey,
+            ],
+            CURLOPT_RETURNTRANSFER => true,
+        ]);
+
+        $response = curl_exec($ch);
+        curl_close($ch);
+
+        $data = is_string($response) ? json_decode($response, true) : null;
+        $thumb = null;
+        if (is_array($data) && !empty($data['thumbnail_url']) && empty($data['error'])) {
+            $thumb = $data['thumbnail_url'];
+        }
+        self::$thumbnail_cache[$videoid] = $thumb;
+        return $thumb;
+    }
+
+    /**
+     * Get list of videos belonging to a user from Stream API (GET /webservice/api/user-videos).
+     * Uses Bearer token (API key). Identifies user by email.
+     *
+     * @param string $email User's email in the Stream platform
+     * @param int $limit Maximum number of videos (1–100). Default 50.
+     * @param int $offset Pagination offset. Default 0.
+     * @return \stdClass { error: bool, message: string, videos: array, total: int }
+     */
+    public static function get_user_videos(string $email, int $limit = 50, int $offset = 0): \stdClass {
+        $out = (object) ['error' => true, 'message' => '', 'videos' => [], 'total' => 0];
+
+        $baseurl = self::get_stream_base_url();
+        $apikey = self::get_stream_api_key();
+        if (!$baseurl || !$apikey) {
+            $out->message = get_string('streamurl_required', 'streamassign');
+            return $out;
+        }
+        $email = trim($email);
+        if ($email === '') {
+            $out->message = 'Email is required.';
+            return $out;
+        }
+        $limit = max(1, min(100, (int) $limit));
+        $offset = max(0, (int) $offset);
+
+        $url = $baseurl . '/webservice/api/user-videos?' . http_build_query([
+            'email' => $email,
+            'limit' => $limit,
+            'offset' => $offset,
+        ]);
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . $apikey],
+            CURLOPT_RETURNTRANSFER => true,
+        ]);
+        $response = curl_exec($ch);
+        curl_close($ch);
+
+        $data = is_string($response) ? json_decode($response, true) : null;
+        if (!is_array($data)) {
+            $out->message = get_string('uploaderror', 'streamassign');
+            return $out;
+        }
+        if (!empty($data['error'])) {
+            $out->message = isset($data['message']) ? $data['message'] : get_string('uploaderror', 'streamassign');
+            return $out;
+        }
+        $out->error = false;
+        $out->videos = isset($data['videos']) && is_array($data['videos']) ? $data['videos'] : [];
+        $out->total = isset($data['total']) ? (int) $data['total'] : count($out->videos);
+        return $out;
     }
 }

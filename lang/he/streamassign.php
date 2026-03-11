@@ -70,3 +70,26 @@ $string['gradesupdated'] = 'הציונים נשמרו.';
 $string['nosubmissionsgrading'] = 'אין הגשות לציון.';
 $string['backtoactivity'] = 'חזרה לפעילות';
 $string['feedback'] = 'הערות';
+$string['clearfilter'] = 'הצג הכל';
+
+// Submission summary (view page, for graders)
+$string['submissionsummary'] = 'סיכום הגשות';
+$string['numberofparticipants'] = 'משתתפים';
+$string['numberofsubmitted'] = 'הוגשו';
+$string['numberofneedgrading'] = 'ממתינים לציון';
+$string['numberofnotsubmitted'] = 'טרם הגישו';
+
+$string['thumbnail'] = 'תמונה ממוזערת';
+$string['nothumbnail'] = 'אין תמונה';
+
+// Submit: choose existing video or upload new
+$string['choosemethod'] = 'איך ברצונך להגיש?';
+$string['selectexisting'] = 'בחירה מסרטונים קיימים שלי';
+$string['uploadnew'] = 'העלאת סרטון חדש';
+$string['myvideos'] = 'הסרטונים שלי';
+$string['myvideos_help'] = 'סרטונים שכבר העלית למערכת Stream. בחר אחד להגשה במטלה זו.';
+$string['selectvideo'] = 'בחר סרטון...';
+$string['pleaseselectvideo'] = 'נא לבחור סרטון.';
+$string['noexistingvideos'] = 'אין לך עדיין סרטונים ב-Stream. העלה סרטון חדש למטה.';
+
+$string['videoprocessing'] = 'הסרטון עדיין בעיבוד. הנגן יופיע כאן כשיהיה מוכן (נבדוק כל 30 שניות).';

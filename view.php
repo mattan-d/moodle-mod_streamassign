@@ -60,27 +60,52 @@ $streamconfigured = \mod_streamassign\stream_uploader::is_configured();
 // Build submission form once so validation errors are shown on same form.
 $submissionform = null;
 if ($cansubmit && $streamconfigured) {
-    $customdata = (object) ['context' => $context, 'cmid' => $cm->id];
+    $uservideos = [];
+    $userlist = \mod_streamassign\stream_uploader::get_user_videos($USER->email, 100, 0);
+    if (!$userlist->error && !empty($userlist->videos)) {
+        $uservideos = $userlist->videos;
+    }
+    $customdata = (object) ['context' => $context, 'cmid' => $cm->id, 'uservideos' => $uservideos];
     $submissionform = new \mod_streamassign\submission_form($PAGE->url, $customdata);
     if ($submissionform->is_cancelled()) {
         redirect($PAGE->url);
     }
     if ($fromform = $submissionform->get_data()) {
-        $draftid = $fromform->video_file ?? 0;
-        $videotitle = $fromform->videotitle ?? '';
-        if ($draftid) {
-            $uploadresult = streamassign_handle_upload($context, $streamassign, $cm, $draftid, $videotitle);
-            if ($uploadresult->success) {
-                redirect($PAGE->url, get_string('uploadsuccess', 'streamassign'), null, \core\output\notification::NOTIFY_SUCCESS);
-            } else {
-                $errmsg = get_string('uploaderror', 'streamassign');
-                if ($uploadresult->message !== '') {
-                    $errmsg .= ': ' . $uploadresult->message;
+        $submissiontype = $fromform->submission_type ?? 'upload';
+        if ($submissiontype === 'existing') {
+            $existingid = (int) ($fromform->existing_video_id ?? 0);
+            if ($existingid > 0) {
+                $videotitle = '';
+                foreach ($userlist->videos as $v) {
+                    if ((int) ($v['id'] ?? 0) === $existingid) {
+                        $videotitle = $v['title'] ?? '';
+                        break;
+                    }
                 }
-                if (!empty($uploadresult->debuginfo) && debugging('', DEBUG_DEVELOPER)) {
-                    $errmsg .= ' [' . s($uploadresult->debuginfo) . ']';
+                $saveresult = streamassign_handle_existing_video($streamassign, $cm, $existingid, $videotitle);
+                if ($saveresult->success) {
+                    redirect($PAGE->url, get_string('uploadsuccess', 'streamassign'), null, \core\output\notification::NOTIFY_SUCCESS);
+                } else {
+                    redirect($PAGE->url, $saveresult->message ?: get_string('uploaderror', 'streamassign'), null, \core\output\notification::NOTIFY_ERROR);
                 }
-                redirect($PAGE->url, $errmsg, null, \core\output\notification::NOTIFY_ERROR);
+            }
+        } else {
+            $draftid = $fromform->video_file ?? 0;
+            $videotitle = $fromform->videotitle ?? '';
+            if ($draftid) {
+                $uploadresult = streamassign_handle_upload($context, $streamassign, $cm, $draftid, $videotitle);
+                if ($uploadresult->success) {
+                    redirect($PAGE->url, get_string('uploadsuccess', 'streamassign'), null, \core\output\notification::NOTIFY_SUCCESS);
+                } else {
+                    $errmsg = get_string('uploaderror', 'streamassign');
+                    if ($uploadresult->message !== '') {
+                        $errmsg .= ': ' . $uploadresult->message;
+                    }
+                    if (!empty($uploadresult->debuginfo) && debugging('', DEBUG_DEVELOPER)) {
+                        $errmsg .= ' [' . s($uploadresult->debuginfo) . ']';
+                    }
+                    redirect($PAGE->url, $errmsg, null, \core\output\notification::NOTIFY_ERROR);
+                }
             }
         }
     }
@@ -88,9 +113,33 @@ if ($cansubmit && $streamconfigured) {
 
 $cangrade = has_capability('mod/streamassign:grade', $context);
 
+// Submission summary for graders (like mod_assign).
+$gradingsummary = null;
+if ($cangrade) {
+    $gradingsummary = streamassign_get_grading_summary((int) $streamassign->id, (int) $course->id, $context);
+}
+
 echo $OUTPUT->header();
 
 if ($cangrade) {
+    if ($gradingsummary) {
+        $notsubmitted = $gradingsummary->participantcount - $gradingsummary->submittedcount;
+        $summarytable = new html_table();
+        $summarytable->attributes['class'] = 'generaltable streamassign-submissionsummary';
+        $summarytable->head = [get_string('submissionsummary', 'streamassign'), ''];
+        $gradingurl = new moodle_url('/mod/streamassign/grading.php', ['id' => $cm->id]);
+        $needgradingcell = $gradingsummary->needgradingcount;
+        if ($gradingsummary->needgradingcount > 0) {
+            $needgradingcell = html_writer::link($gradingurl, $gradingsummary->needgradingcount);
+        }
+        $summarytable->data = [
+            [get_string('numberofparticipants', 'streamassign'), $gradingsummary->participantcount],
+            [get_string('numberofsubmitted', 'streamassign'), $gradingsummary->submittedcount],
+            [get_string('numberofneedgrading', 'streamassign'), $needgradingcell],
+            [get_string('numberofnotsubmitted', 'streamassign'), $notsubmitted],
+        ];
+        echo $OUTPUT->box(html_writer::table($summarytable), 'generalbox streamassign-summarybox');
+    }
     echo $OUTPUT->single_button(
         new moodle_url('/mod/streamassign/grading.php', ['id' => $cm->id]),
         get_string('viewgrading', 'streamassign'),
@@ -116,16 +165,25 @@ if (!$streamconfigured) {
 
 if ($submission) {
     echo $OUTPUT->heading(get_string('yoursubmission', 'streamassign'), 3);
-    $embedurl = \mod_streamassign\stream_uploader::get_embed_url_with_jwt((int) $submission->streamid, $USER, 7200);
+    $hasthumb = \mod_streamassign\stream_uploader::get_video_thumbnail_url((int) $submission->streamid) !== null;
+    $embedurl = $hasthumb ? \mod_streamassign\stream_uploader::get_embed_url_with_jwt((int) $submission->streamid, $USER, 7200) : null;
     $watchurl = $streamurl ? $streamurl . '/watch/' . $submission->streamid : '';
     $submissioninfo = [
         'submittedon' => get_string('submittedon', 'streamassign') . ' ' . userdate($submission->timemodified),
         'videotitle' => get_string('videotitle', 'streamassign') . ': ' . s($submission->videotitle ?: '-'),
+        'videoready' => $hasthumb,
     ];
-    if ($embedurl) {
+    if ($hasthumb && $embedurl) {
         $submissioninfo['embedurl'] = $embedurl;
         $submissioninfo['embedwidth'] = 640;
         $submissioninfo['embedheight'] = 360;
+        $submissioninfo['embedtitle'] = get_string('watchvideo', 'streamassign');
+    }
+    if (!$hasthumb) {
+        $checkurl = new moodle_url('/mod/streamassign/check_thumbnail.php', ['id' => $cm->id, 'sesskey' => sesskey()]);
+        $submissioninfo['checkurl'] = $checkurl->out(false);
+        $submissioninfo['processingmessage'] = get_string('videoprocessing', 'streamassign');
+        $submissioninfo['nextcheckseconds'] = 30;
         $submissioninfo['embedtitle'] = get_string('watchvideo', 'streamassign');
     }
     if ($watchurl) {

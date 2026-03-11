@@ -110,6 +110,52 @@ function streamassign_handle_upload($context, $streamassign, $cm, $draftid, $vid
 }
 
 /**
+ * Save submission by selecting an existing video from the user's Stream library (no upload).
+ *
+ * @param stdClass $streamassign
+ * @param stdClass $cm
+ * @param int $streamid Video id on Stream platform
+ * @param string $videotitle Title to store (e.g. from API video title)
+ * @return stdClass { success: bool, message?: string }
+ */
+function streamassign_handle_existing_video($streamassign, $cm, $streamid, $videotitle = '') {
+    global $USER, $DB;
+
+    $result = (object) ['success' => false, 'message' => ''];
+    $streamid = (int) $streamid;
+    if ($streamid <= 0) {
+        $result->message = get_string('uploaderror', 'streamassign');
+        return $result;
+    }
+
+    $now = time();
+    $submission = $DB->get_record('streamassign_submission', [
+        'streamassignid' => $streamassign->id,
+        'userid' => $USER->id,
+    ]);
+    $title = trim($videotitle) !== '' ? trim($videotitle) : get_string('videotitle', 'streamassign');
+
+    if ($submission) {
+        $submission->streamid = $streamid;
+        $submission->videotitle = $title;
+        $submission->timemodified = $now;
+        $DB->update_record('streamassign_submission', $submission);
+    } else {
+        $DB->insert_record('streamassign_submission', (object) [
+            'streamassignid' => $streamassign->id,
+            'userid' => $USER->id,
+            'streamid' => $streamid,
+            'videotitle' => $title,
+            'timecreated' => $now,
+            'timemodified' => $now,
+        ]);
+    }
+
+    $result->success = true;
+    return $result;
+}
+
+/**
  * Render the submission form (uses submission_form moodleform).
  *
  * @param context_module $context

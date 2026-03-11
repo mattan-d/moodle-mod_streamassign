@@ -70,3 +70,26 @@ $string['gradesupdated'] = 'Grades saved.';
 $string['nosubmissionsgrading'] = 'No submissions to grade.';
 $string['backtoactivity'] = 'Back to activity';
 $string['feedback'] = 'Feedback';
+$string['clearfilter'] = 'Show all';
+
+// Submission summary (view page, for graders)
+$string['submissionsummary'] = 'Submission summary';
+$string['numberofparticipants'] = 'Participants';
+$string['numberofsubmitted'] = 'Submitted';
+$string['numberofneedgrading'] = 'Needs grading';
+$string['numberofnotsubmitted'] = 'Not submitted';
+
+$string['thumbnail'] = 'Thumbnail';
+$string['nothumbnail'] = 'No thumbnail';
+
+// Submit: choose existing video or upload new
+$string['choosemethod'] = 'How do you want to submit?';
+$string['selectexisting'] = 'Choose from my existing videos';
+$string['uploadnew'] = 'Upload a new video';
+$string['myvideos'] = 'My videos';
+$string['myvideos_help'] = 'Videos you have already uploaded to the Stream platform. Select one to submit for this activity.';
+$string['selectvideo'] = 'Choose a video...';
+$string['pleaseselectvideo'] = 'Please select a video.';
+$string['noexistingvideos'] = 'You have no videos on Stream yet. Upload a new video below.';
+
+$string['videoprocessing'] = 'Your video is still being processed. The player will appear here when it is ready (we check every 30 seconds).';

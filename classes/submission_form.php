@@ -34,10 +34,71 @@ class submission_form extends \moodleform {
         $customdata = $this->_customdata;
         $context = $customdata->context;
         $cmid = $customdata->cmid;
+        $uservideos = $customdata->uservideos ?? [];
 
         $mform->addElement('hidden', 'id', $cmid);
         $mform->setType('id', PARAM_INT);
 
+        $hasexisting = !empty($uservideos);
+        if (!$hasexisting) {
+            $mform->addElement('hidden', 'submission_type', 'upload');
+            $mform->setType('submission_type', PARAM_ALPHA);
+        }
+
+        if ($hasexisting) {
+            $mform->addElement('header', 'submissionmethod', get_string('choosemethod', 'streamassign'));
+            $radios = [];
+            $radios[] = $mform->createElement('radio', 'submission_type', '', get_string('selectexisting', 'streamassign'), 'existing');
+            $radios[] = $mform->createElement('radio', 'submission_type', '', get_string('uploadnew', 'streamassign'), 'upload');
+            $mform->addGroup($radios, 'submission_type_group', '', ['<br>'], false);
+            $mform->setDefault('submission_type', 'existing');
+
+            $mform->addElement('hidden', 'existing_video_id', 0);
+            $mform->setType('existing_video_id', PARAM_INT);
+            $mform->addElement('static', 'myvideos_label', get_string('myvideos', 'streamassign'), '');
+            $mform->addHelpButton('myvideos_label', 'myvideos', 'streamassign');
+
+            $listhtml = '<div class="streamassign-existing-videos-list" id="streamassign-existing-videos-list">';
+            foreach ($uservideos as $v) {
+                $id = isset($v['id']) ? (int) $v['id'] : 0;
+                if ($id <= 0) {
+                    continue;
+                }
+                $title = isset($v['title']) ? $v['title'] : ('Video ' . $id);
+                $thumburl = stream_uploader::get_video_thumbnail_url($id);
+                $thumbhtml = $thumburl
+                    ? '<img src="' . s($thumburl) . '" alt="" class="streamassign-video-thumb" width="160" height="90">'
+                    : '<span class="streamassign-no-thumb">' . get_string('nothumbnail', 'streamassign') . '</span>';
+                $listhtml .= '<label class="streamassign-video-card" data-video-id="' . $id . '">';
+                $listhtml .= '<input type="radio" name="existing_video_id_sel" value="' . $id . '" class="streamassign-video-radio">';
+                $listhtml .= '<span class="streamassign-video-card-inner">' . $thumbhtml . '<span class="streamassign-video-title">' . s($title) . '</span></span>';
+                $listhtml .= '</label>';
+            }
+            $listhtml .= '</div>';
+            $listhtml .= '<script>
+            (function() {
+                var list = document.getElementById("streamassign-existing-videos-list");
+                if (!list) return;
+                var hidden = document.getElementById("id_existing_video_id");
+                if (!hidden) return;
+                list.querySelectorAll(".streamassign-video-card").forEach(function(card) {
+                    card.addEventListener("click", function() {
+                        var id = this.getAttribute("data-video-id");
+                        hidden.value = id;
+                        list.querySelectorAll(".streamassign-video-card").forEach(function(c) { c.classList.remove("selected"); });
+                        this.classList.add("selected");
+                    });
+                });
+            })();
+            </script>';
+            $mform->addElement('html', $listhtml);
+            $mform->disabledIf('existing_video_id', 'submission_type', 'neq', 'existing');
+            $mform->disabledIf('myvideos_label', 'submission_type', 'neq', 'existing');
+        } else {
+            $mform->addElement('static', 'noexisting', '', get_string('noexistingvideos', 'streamassign'));
+        }
+
+        $mform->addElement('header', 'uploadsection', get_string('uploadnew', 'streamassign'));
         $mform->addElement('text', 'videotitle', get_string('videotitle', 'streamassign'), ['size' => 64]);
         $mform->setType('videotitle', PARAM_TEXT);
         $mform->addHelpButton('videotitle', 'videotitle', 'streamassign');
@@ -48,8 +109,13 @@ class submission_form extends \moodleform {
             'return_types' => \FILE_INTERNAL,
         ];
         $mform->addElement('filemanager', 'video_file', get_string('uploadvideo', 'streamassign'), null, $options);
-        $mform->addRule('video_file', get_string('required'), 'required', null, 'client');
         $mform->addElement('static', 'allowedformats', '', get_string('allowedformats', 'streamassign'));
+
+        if ($hasexisting) {
+            $mform->disabledIf('videotitle', 'submission_type', 'neq', 'upload');
+            $mform->disabledIf('video_file', 'submission_type', 'neq', 'upload');
+            $mform->disabledIf('allowedformats', 'submission_type', 'neq', 'upload');
+        }
 
         $this->add_action_buttons(true, get_string('submitvideo', 'streamassign'));
     }
@@ -63,13 +129,24 @@ class submission_form extends \moodleform {
      */
     public function validation($data, $files) {
         $errors = parent::validation($data, $files);
-        $draftid = $data['video_file'] ?? 0;
-        if ($draftid) {
-            $usercontext = \context_user::instance($GLOBALS['USER']->id);
-            $fs = get_file_storage();
-            $draftfiles = $fs->get_area_files($usercontext->id, 'user', 'draft', $draftid, 'id', false);
-            if (empty($draftfiles)) {
-                $errors['video_file'] = get_string('uploaderror', 'streamassign');
+        $type = isset($data['submission_type']) ? $data['submission_type'] : 'upload';
+
+        if ($type === 'existing') {
+            $existingid = isset($data['existing_video_id']) ? (int) $data['existing_video_id'] : 0;
+            if ($existingid <= 0) {
+                $errors['existing_video_id'] = get_string('pleaseselectvideo', 'streamassign');
+            }
+        } else {
+            $draftid = $data['video_file'] ?? 0;
+            if (empty($draftid)) {
+                $errors['video_file'] = get_string('required');
+            } else {
+                $usercontext = \context_user::instance($GLOBALS['USER']->id);
+                $fs = get_file_storage();
+                $draftfiles = $fs->get_area_files($usercontext->id, 'user', 'draft', $draftid, 'id', false);
+                if (empty($draftfiles)) {
+                    $errors['video_file'] = get_string('uploaderror', 'streamassign');
+                }
             }
         }
         return $errors;

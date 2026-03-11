@@ -41,12 +41,21 @@ if ($tilast !== '') {
     $tilast = core_text::strtoupper(core_text::substr($tilast, 0, 1));
 }
 
+$perpage = 30;
+$page = optional_param('page', 0, PARAM_INT);
+if ($page < 0) {
+    $page = 0;
+}
+
 $urlparams = ['id' => $cm->id];
 if ($tifirst !== '') {
     $urlparams['tifirst'] = $tifirst;
 }
 if ($tilast !== '') {
     $urlparams['tilast'] = $tilast;
+}
+if ($page > 0) {
+    $urlparams['page'] = $page;
 }
 $PAGE->set_url('/mod/streamassign/grading.php', $urlparams);
 $PAGE->set_title(format_string($streamassign->name) . ' - ' . get_string('grading', 'streamassign'));
@@ -59,11 +68,13 @@ $grademax = (int) $streamassign->grade;
 if (data_submitted() && confirm_sesskey()) {
     $grades = optional_param_array('grade', [], PARAM_FLOAT);
     $feedbacks = optional_param_array('feedback', [], PARAM_TEXT);
+    // Only update users that appear in the form (current page); keys are user ids.
+    $useridsonsubmit = array_unique(array_merge(array_keys($grades), array_keys($feedbacks)));
+    $allsubmissions = streamassign_get_submissions_for_grading((int) $streamassign->id, (int) $course->id);
     $updated = 0;
-    $userids = array_keys(streamassign_get_submissions_for_grading((int) $streamassign->id, (int) $course->id));
-    foreach ($userids as $userid) {
+    foreach ($useridsonsubmit as $userid) {
         $userid = (int) $userid;
-        if ($userid <= 0) {
+        if ($userid <= 0 || !isset($allsubmissions[$userid])) {
             continue;
         }
         $grade = null;
@@ -100,6 +111,29 @@ if ($tifirst !== '' || $tilast !== '') {
     }
 }
 
+$totalcount = count($submissions);
+$baseurl = new moodle_url('/mod/streamassign/grading.php', ['id' => $cm->id]);
+if ($tifirst !== '') {
+    $baseurl->param('tifirst', $tifirst);
+}
+if ($tilast !== '') {
+    $baseurl->param('tilast', $tilast);
+}
+
+$maxpage = ($perpage > 0 && $totalcount > 0) ? max(0, (int) ceil($totalcount / $perpage) - 1) : 0;
+if ($page > $maxpage) {
+    $page = $maxpage;
+    if ($page > 0) {
+        $urlparams['page'] = $page;
+        $PAGE->set_url('/mod/streamassign/grading.php', $urlparams);
+    }
+}
+
+// Pagination: show only current page.
+if ($totalcount > $perpage) {
+    $submissions = array_slice($submissions, $page * $perpage, $perpage, true);
+}
+
 echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('grading', 'streamassign'), 2);
 echo $OUTPUT->single_button(
@@ -109,7 +143,6 @@ echo $OUTPUT->single_button(
 );
 
 // Initials bar: filter by first letter of firstname / lastname (like Moodle core assign).
-$baseurl = new moodle_url('/mod/streamassign/grading.php', ['id' => $cm->id]);
 $urlfirst = clone $baseurl;
 if ($tilast !== '') {
     $urlfirst->param('tilast', $tilast);
@@ -126,6 +159,10 @@ if ($tifirst !== '' || $tilast !== '') {
 }
 echo html_writer::end_tag('div');
 
+if ($totalcount > $perpage) {
+    echo $OUTPUT->paging_bar($totalcount, $page, $perpage, $baseurl, 'page');
+}
+
 if (empty($submissions)) {
     echo $OUTPUT->notification(get_string('nosubmissionsgrading', 'streamassign'), 'notifyinfo');
     echo $OUTPUT->footer();
@@ -141,6 +178,7 @@ if ($showform) {
 
 $table = new html_table();
 $table->head = [
+    get_string('thumbnail', 'streamassign'),
     get_string('fullname'),
     get_string('submittedon', 'streamassign'),
     get_string('videotitle', 'streamassign'),
@@ -155,6 +193,19 @@ $table->attributes['class'] = 'generaltable streamassign-grading-table';
 foreach ($submissions as $row) {
     $user = $row->user;
     $sub = $row->submission;
+    $thumburl = \mod_streamassign\stream_uploader::get_video_thumbnail_url((int) $sub->streamid);
+    $thumbcell = '';
+    if ($thumburl) {
+        $thumbcell = html_writer::empty_tag('img', [
+            'src' => $thumburl,
+            'alt' => s($sub->videotitle ?: get_string('watchvideo', 'streamassign')),
+            'class' => 'streamassign-video-thumb',
+            'width' => 160,
+            'height' => 90,
+        ]);
+    } else {
+        $thumbcell = html_writer::span(get_string('nothumbnail', 'streamassign'), 'streamassign-no-thumb');
+    }
     $watchlink = '';
     if ($streamurl) {
         $embedurl = \mod_streamassign\stream_uploader::get_embed_url_with_jwt((int) $sub->streamid, $user, 7200);
@@ -165,6 +216,7 @@ foreach ($submissions as $row) {
         }
     }
     $tablerow = [
+        $thumbcell,
         $OUTPUT->user_picture($user, ['size' => 35, 'courseid' => $course->id]) . ' ' . fullname($user),
         userdate($sub->timemodified),
         s($sub->videotitle ?: '-'),
@@ -199,6 +251,10 @@ if ($showform) {
         'class' => 'btn btn-primary',
     ]), ['class' => 'streamassign-grading-submit']);
     echo html_writer::end_tag('form');
+}
+
+if ($totalcount > $perpage) {
+    echo $OUTPUT->paging_bar($totalcount, $page, $perpage, $baseurl, 'page');
 }
 
 echo $OUTPUT->footer();
