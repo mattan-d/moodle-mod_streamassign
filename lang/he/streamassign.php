@@ -91,5 +91,7 @@ $string['myvideos_help'] = 'סרטונים שכבר העלית למערכת Stre
 $string['selectvideo'] = 'בחר סרטון...';
 $string['pleaseselectvideo'] = 'נא לבחור סרטון.';
 $string['noexistingvideos'] = 'אין לך עדיין סרטונים ב-Stream. העלה סרטון חדש למטה.';
+$string['searchmyvideos'] = 'חיפוש סרטונים...';
+$string['selected'] = 'נבחר';
 
 $string['videoprocessing'] = 'הסרטון עדיין בעיבוד. הנגן יופיע כאן כשיהיה מוכן (נבדוק כל 30 שניות).';

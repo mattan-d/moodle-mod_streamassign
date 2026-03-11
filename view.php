@@ -68,11 +68,14 @@ if ($cansubmit && $streamconfigured) {
     }
     $customdata = (object) ['context' => $context, 'cmid' => $cm->id, 'uservideos' => $uservideos];
     $submissionform = new \mod_streamassign\submission_form($PAGE->url, $customdata);
+    if (!empty($uservideos)) {
+        $PAGE->requires->js_call_amd('mod_streamassign/videopicker', 'init', []);
+    }
     if ($submissionform->is_cancelled()) {
         redirect($PAGE->url);
     }
     if ($fromform = $submissionform->get_data()) {
-        $submissiontype = $fromform->submission_type ?? 'upload';
+        $submissiontype = $fromform->submission_type_group ?? $fromform->submission_type ?? 'upload';
         if ($submissiontype === 'existing') {
             $existingid = (int) ($fromform->existing_video_id ?? 0);
             if ($existingid > 0) {

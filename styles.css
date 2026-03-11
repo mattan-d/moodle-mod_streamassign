@@ -1,36 +1,85 @@
 /* Stream assignment: existing videos list (thumbnails grid) */
-.streamassign-existing-videos-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 1.25rem;
+.streamassign-myvideos-wrapper {
     margin: 1rem 0;
 }
 
+.streamassign-video-search {
+    max-width: 320px;
+    margin-bottom: 1rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid #ced4da;
+}
+
+.streamassign-video-search:focus {
+    border-color: #0d6efd;
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.streamassign-existing-videos-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1.25rem;
+}
+
 .streamassign-video-card {
+    position: relative;
     display: block;
     cursor: pointer;
     border: 2px solid #dee2e6;
-    border-radius: 10px;
+    border-radius: 12px;
     overflow: hidden;
-    transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s ease;
+    transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s ease;
     background: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
 .streamassign-video-card:hover {
     border-color: #adb5bd;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
-    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+    transform: translateY(-3px);
 }
 
 .streamassign-video-card.selected {
     border-color: #0d6efd;
-    box-shadow: 0 4px 14px rgba(13, 110, 253, 0.3);
+    border-width: 3px;
+    box-shadow: 0 6px 20px rgba(13, 110, 253, 0.35);
 }
 
 .streamassign-video-card .streamassign-video-radio {
     position: absolute;
     opacity: 0;
     pointer-events: none;
+}
+
+.streamassign-video-selected-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 2;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: #0d6efd;
+    color: #fff;
+    border-radius: 50%;
+    font-size: 0.7rem;
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(13, 110, 253, 0.5);
+}
+
+.streamassign-video-card.selected .streamassign-video-selected-badge {
+    display: flex;
+}
+
+.streamassign-video-selected-badge::before {
+    content: "✓";
+    font-size: 1.1rem;
+    line-height: 1;
+    font-weight: bold;
 }
 
 .streamassign-video-card-inner {
@@ -87,12 +136,12 @@
 
 .streamassign-video-card .streamassign-video-title {
     display: block;
-    padding: 0.6rem 0.75rem;
+    padding: 0.65rem 0.85rem;
     font-size: 0.875rem;
     background: #f8f9fa;
     color: #212529;
-    line-height: 1.35;
-    max-height: 2.7em;
+    line-height: 1.4;
+    max-height: 2.8em;
     overflow: hidden;
     text-overflow: ellipsis;
     display: -webkit-box;
@@ -102,4 +151,5 @@
 
 .streamassign-video-card.selected .streamassign-video-title {
     background: #e7f1ff;
+    color: #0a58ca;
 }

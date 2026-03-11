@@ -58,7 +58,11 @@ class submission_form extends \moodleform {
             $mform->addElement('static', 'myvideos_label', get_string('myvideos', 'streamassign'), '');
             $mform->addHelpButton('myvideos_label', 'myvideos', 'streamassign');
 
-            $listhtml = '<div class="streamassign-existing-videos-list" id="streamassign-existing-videos-list">';
+            $searchplaceholder = get_string('searchmyvideos', 'streamassign');
+            $selectedlabel = get_string('selected', 'streamassign');
+            $listhtml = '<div class="streamassign-myvideos-wrapper">';
+            $listhtml .= '<input type="text" class="streamassign-video-search form-control" id="streamassign-video-search" placeholder="' . s($searchplaceholder) . '" autocomplete="off">';
+            $listhtml .= '<div class="streamassign-existing-videos-list" id="streamassign-existing-videos-list">';
             foreach ($uservideos as $v) {
                 $id = isset($v['id']) ? (int) $v['id'] : 0;
                 if ($id <= 0) {
@@ -66,6 +70,7 @@ class submission_form extends \moodleform {
                 }
                 $title = isset($v['title']) ? $v['title'] : ('Video ' . $id);
                 $duration = isset($v['duration']) ? $v['duration'] : '';
+                $searchtitle = \core_text::strtolower($title);
                 $thumburl = !empty($v['thumbnail']) ? $v['thumbnail'] : stream_uploader::get_video_thumbnail_url($id);
                 $thumbhtml = '<span class="streamassign-video-thumb-wrap">';
                 if ($thumburl) {
@@ -80,31 +85,16 @@ class submission_form extends \moodleform {
                     }
                 }
                 $thumbhtml .= '</span>';
-                $listhtml .= '<label class="streamassign-video-card" data-video-id="' . $id . '">';
+                $listhtml .= '<label class="streamassign-video-card" data-video-id="' . $id . '" data-search-title="' . s($searchtitle) . '">';
                 $listhtml .= '<input type="radio" name="existing_video_id_sel" value="' . $id . '" class="streamassign-video-radio">';
+                $listhtml .= '<span class="streamassign-video-selected-badge" aria-label="' . s($selectedlabel) . '"></span>';
                 $listhtml .= '<span class="streamassign-video-card-inner">' . $thumbhtml . '<span class="streamassign-video-title">' . s($title) . '</span></span>';
                 $listhtml .= '</label>';
             }
-            $listhtml .= '</div>';
-            $listhtml .= '<script>
-            (function() {
-                var list = document.getElementById("streamassign-existing-videos-list");
-                if (!list) return;
-                var hidden = document.getElementById("id_existing_video_id");
-                if (!hidden) return;
-                list.querySelectorAll(".streamassign-video-card").forEach(function(card) {
-                    card.addEventListener("click", function() {
-                        var id = this.getAttribute("data-video-id");
-                        hidden.value = id;
-                        list.querySelectorAll(".streamassign-video-card").forEach(function(c) { c.classList.remove("selected"); });
-                        this.classList.add("selected");
-                    });
-                });
-            })();
-            </script>';
+            $listhtml .= '</div></div>';
             $mform->addElement('html', $listhtml);
-            $mform->disabledIf('existing_video_id', 'submission_type', 'neq', 'existing');
-            $mform->disabledIf('myvideos_label', 'submission_type', 'neq', 'existing');
+            $mform->disabledIf('existing_video_id', 'submission_type_group', 'neq', 'existing');
+            $mform->disabledIf('myvideos_label', 'submission_type_group', 'neq', 'existing');
         } else {
             $mform->addElement('static', 'noexisting', '', get_string('noexistingvideos', 'streamassign'));
         }
@@ -123,9 +113,9 @@ class submission_form extends \moodleform {
         $mform->addElement('static', 'allowedformats', '', get_string('allowedformats', 'streamassign'));
 
         if ($hasexisting) {
-            $mform->disabledIf('videotitle', 'submission_type', 'neq', 'upload');
-            $mform->disabledIf('video_file', 'submission_type', 'neq', 'upload');
-            $mform->disabledIf('allowedformats', 'submission_type', 'neq', 'upload');
+            $mform->disabledIf('videotitle', 'submission_type_group', 'neq', 'upload');
+            $mform->disabledIf('video_file', 'submission_type_group', 'neq', 'upload');
+            $mform->disabledIf('allowedformats', 'submission_type_group', 'neq', 'upload');
         }
 
         $this->add_action_buttons(true, get_string('submitvideo', 'streamassign'));
@@ -140,7 +130,7 @@ class submission_form extends \moodleform {
      */
     public function validation($data, $files) {
         $errors = parent::validation($data, $files);
-        $type = isset($data['submission_type']) ? $data['submission_type'] : 'upload';
+        $type = isset($data['submission_type_group']) ? $data['submission_type_group'] : (isset($data['submission_type']) ? $data['submission_type'] : 'upload');
 
         if ($type === 'existing') {
             $existingid = isset($data['existing_video_id']) ? (int) $data['existing_video_id'] : 0;

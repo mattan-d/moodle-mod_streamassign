@@ -91,5 +91,7 @@ $string['myvideos_help'] = 'Videos you have already uploaded to the Stream platf
 $string['selectvideo'] = 'Choose a video...';
 $string['pleaseselectvideo'] = 'Please select a video.';
 $string['noexistingvideos'] = 'You have no videos on Stream yet. Upload a new video below.';
+$string['searchmyvideos'] = 'Search videos...';
+$string['selected'] = 'Selected';
 
 $string['videoprocessing'] = 'Your video is still being processed. The player will appear here when it is ready (we check every 30 seconds).';
