@@ -65,10 +65,21 @@ class submission_form extends \moodleform {
                     continue;
                 }
                 $title = isset($v['title']) ? $v['title'] : ('Video ' . $id);
-                $thumburl = stream_uploader::get_video_thumbnail_url($id);
-                $thumbhtml = $thumburl
-                    ? '<img src="' . s($thumburl) . '" alt="" class="streamassign-video-thumb" width="160" height="90">'
-                    : '<span class="streamassign-no-thumb">' . get_string('nothumbnail', 'streamassign') . '</span>';
+                $duration = isset($v['duration']) ? $v['duration'] : '';
+                $thumburl = !empty($v['thumbnail']) ? $v['thumbnail'] : stream_uploader::get_video_thumbnail_url($id);
+                $thumbhtml = '<span class="streamassign-video-thumb-wrap">';
+                if ($thumburl) {
+                    $thumbhtml .= '<img src="' . s($thumburl) . '" alt="" class="streamassign-video-thumb" width="160" height="90">';
+                    if ($duration !== '') {
+                        $thumbhtml .= '<span class="streamassign-video-duration">' . s($duration) . '</span>';
+                    }
+                } else {
+                    $thumbhtml .= '<span class="streamassign-no-thumb">' . get_string('nothumbnail', 'streamassign') . '</span>';
+                    if ($duration !== '') {
+                        $thumbhtml .= '<span class="streamassign-video-duration">' . s($duration) . '</span>';
+                    }
+                }
+                $thumbhtml .= '</span>';
                 $listhtml .= '<label class="streamassign-video-card" data-video-id="' . $id . '">';
                 $listhtml .= '<input type="radio" name="existing_video_id_sel" value="' . $id . '" class="streamassign-video-radio">';
                 $listhtml .= '<span class="streamassign-video-card-inner">' . $thumbhtml . '<span class="streamassign-video-title">' . s($title) . '</span></span>';

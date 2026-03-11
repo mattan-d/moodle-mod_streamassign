@@ -46,6 +46,7 @@ require_capability('mod/streamassign:view', $context);
 $PAGE->set_url('/mod/streamassign/view.php', ['id' => $cm->id]);
 $PAGE->set_title(format_string($streamassign->name));
 $PAGE->set_heading(format_string($course->fullname));
+$PAGE->requires->css('/mod/streamassign/styles.css');
 
 $timenow = time();
 $canedit = has_capability('mod/streamassign:addinstance', $context);
