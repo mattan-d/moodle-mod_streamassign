@@ -44,6 +44,7 @@ $string['videotitle'] = 'Video title (optional)';
 $string['videotitle_help'] = 'Title for the video on the Stream platform. If empty, the file name will be used.';
 $string['allowedformats'] = 'Allowed formats: MP4, WebM, MKV, AVI, MOV, and other common video formats.';
 $string['uploadsuccess'] = 'Video uploaded successfully to Stream.';
+$string['readytoupload'] = 'Click "Submit video" to upload this file.';
 $string['uploaderror'] = 'Upload failed';
 $string['activitynotavailableyet'] = 'This activity is not available until {$a}.';
 $string['activityclosed'] = 'This activity closed on {$a}.';

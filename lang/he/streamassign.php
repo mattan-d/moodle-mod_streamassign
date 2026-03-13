@@ -44,6 +44,7 @@ $string['videotitle'] = 'כותרת הוידאו (אופציונלי)';
 $string['videotitle_help'] = 'כותרת הוידאו במערכת Stream. אם ריק, ישתמש בשם הקובץ.';
 $string['allowedformats'] = 'פורמטים נתמכים: MP4, WebM, MKV, AVI, MOV ופורמטי וידאו נפוצים אחרים.';
 $string['uploadsuccess'] = 'הוידאו הועלה בהצלחה ל-Stream.';
+$string['readytoupload'] = 'לחץ על "הגשת וידאו" כדי להעלות קובץ זה.';
 $string['uploaderror'] = 'ההעלאה נכשלה';
 $string['activitynotavailableyet'] = 'פעילות זו אינה זמינה עד {$a}.';
 $string['activityclosed'] = 'פעילות זו נסגרה ב-{$a}.';

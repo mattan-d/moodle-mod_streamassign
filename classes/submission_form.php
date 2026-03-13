@@ -115,6 +115,7 @@ class submission_form extends \moodleform {
         $dropzonehtml .= '<p class="streamassign-upload-text">' . s(get_string('uploadzonetext', 'streamassign')) . '</p>';
         $dropzonehtml .= '<p class="streamassign-upload-hint">' . s(get_string('uploadzonehint', 'streamassign')) . '</p>';
         $dropzonehtml .= '<p class="streamassign-upload-filename" id="streamassign-upload-filename" style="display:none;"></p>';
+        $dropzonehtml .= '<p class="streamassign-upload-ready-msg" id="streamassign-upload-ready-msg" style="display:none;"></p>';
         $dropzonehtml .= '</div>';
         $dropzonehtml .= '<div class="streamassign-upload-progress-wrapper" id="streamassign-upload-progress-wrapper" style="display:none;">';
         $dropzonehtml .= '<div class="streamassign-upload-progress-bar" id="streamassign-upload-progress-bar"></div>';

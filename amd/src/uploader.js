@@ -112,6 +112,20 @@ define([], function() {
         var videotitleInput = form.querySelector('input[type="text"][name*="videotitle"], input[type="text"][id*="videotitle"]');
         var filenameEl = wrapper.querySelector('#streamassign-upload-filename');
 
+        /** Resolve string from M.util.get_string (may be sync or Promise depending on Moodle version). */
+        function getStr(key, fallback, callback) {
+            if (!window.M || !M.util || !M.util.get_string) {
+                callback(fallback);
+                return;
+            }
+            var result = M.util.get_string(key, 'mod_streamassign');
+            if (result && typeof result.then === 'function') {
+                result.then(function(s) { callback(s || fallback); }).catch(function() { callback(fallback); });
+            } else {
+                callback(typeof result === 'string' ? result : fallback);
+            }
+        }
+
         function getVideotitle() {
             if (videotitleInput) {
                 return (videotitleInput.value || '').trim();
@@ -155,7 +169,7 @@ define([], function() {
                 console.log('mod_streamassign/uploader uploadFile', {name: file && file.name, size: file && file.size});
             }
             if (file.size > MAX_SIZE) {
-                showError(window.M && M.util && M.util.get_string ? M.util.get_string('uploadtoolarge', 'streamassign') : 'File exceeds 2GB.');
+                getStr('uploadtoolarge', 'File exceeds 2GB.', showError);
                 return;
             }
 
@@ -216,8 +230,10 @@ define([], function() {
                         setStreamId(data.streamid);
                         setState(false, false, true);
                         if (doneEl) {
-                            doneEl.textContent = (window.M && M.util && M.util.get_string ? M.util.get_string('uploadsuccess', 'streamassign') : 'Upload complete.');
                             doneEl.className = 'streamassign-upload-done streamassign-upload-success';
+                            getStr('uploadsuccess', 'Upload complete.', function(s) {
+                                doneEl.textContent = s;
+                            });
                         }
                         return;
                     }
@@ -242,7 +258,10 @@ define([], function() {
                 if (window.console && console.error) {
                     console.error('mod_streamassign/uploader error', err);
                 }
-                showError(err.message || (window.M && M.util && M.util.get_string ? M.util.get_string('uploaderror', 'streamassign') : 'Upload failed'));
+                var fallback = err.message || 'Upload failed';
+                getStr('uploaderror', 'Upload failed', function(s) {
+                    showError(err.message || s || fallback);
+                });
             });
         }
 
@@ -267,7 +286,7 @@ define([], function() {
             var looksVideo = (file.type && file.type.indexOf('video/') === 0) ||
                 lower.match(/\.(mp4|webm|mkv|avi|mov|mpeg|mpg|flv|wmv|ogv|ogg|vob)$/);
             if (!looksVideo) {
-                showError(window.M && M.util && M.util.get_string ? M.util.get_string('uploaderror', 'streamassign') : 'Please select a video file.');
+                getStr('uploaderror', 'Please select a video file.', showError);
                 return;
             }
             uploadFile(file);
@@ -279,10 +298,8 @@ define([], function() {
                 e.stopPropagation();
                 return;
             }
-            e.preventDefault();
-            e.stopPropagation();
-            fileInput.removeAttribute('disabled');
-            fileInput.click();
+            /* Do not preventDefault/stopPropagation: let the label's native behavior open the file input.
+               Programmatic fileInput.click() is blocked in many browsers after preventDefault. */
         }, true);
 
         zone.addEventListener('keydown', function(e) {
