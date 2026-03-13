@@ -22,6 +22,9 @@
  */
 
 define([], function() {
+    if (window.console && console.log) {
+        console.log('[streamassign] uploader AMD module loaded');
+    }
 
     var CHUNK_SIZE = 5 * 1024 * 1024; // 5MB
     var MAX_SIZE = 2 * 1024 * 1024 * 1024; // 2GB
@@ -51,8 +54,14 @@ define([], function() {
      * @param {string} baseUrl Optional base URL for upload (default: relative /mod/streamassign/upload_video.php)
      */
     function init(baseUrl) {
+        if (window.console && console.log) {
+            console.log('[streamassign] uploader init() called');
+        }
         var wrapper = document.querySelector('.streamassign-upload-zone-wrapper');
         if (!wrapper) {
+            if (window.console && console.warn) {
+                console.warn('[streamassign] uploader init exit: no .streamassign-upload-zone-wrapper');
+            }
             return;
         }
         var zone = wrapper.querySelector('.streamassign-upload-zone') || document.getElementById('streamassign-upload-zone');
@@ -62,18 +71,40 @@ define([], function() {
         var progressText = wrapper.querySelector('#streamassign-upload-progress-text');
         var doneEl = wrapper.querySelector('#streamassign-upload-done');
         var form = wrapper.closest('form');
+        if (!form) {
+            form = document.querySelector('form.streamassign-submission-form');
+        }
+        if (!form) {
+            var el = wrapper.parentElement;
+            while (el && el !== document.body) {
+                if (el.tagName && el.tagName.toLowerCase() === 'form') {
+                    form = el;
+                    break;
+                }
+                el = el.parentElement;
+            }
+        }
+        if (!form) {
+            form = document.querySelector('form[id^="mform"]');
+        }
         if (!zone || !fileInput || !form) {
+            if (window.console && console.warn) {
+                console.warn('[streamassign] uploader init exit: missing zone/fileInput/form', {zone: !!zone, fileInput: !!fileInput, form: !!form});
+            }
             return;
         }
 
         var cmid = wrapper.getAttribute('data-cmid');
         var sesskey = wrapper.getAttribute('data-sesskey');
         if (!cmid || !sesskey) {
+            if (window.console && console.warn) {
+                console.warn('[streamassign] uploader init exit: missing cmid/sesskey', {cmid: cmid, sesskey: !!sesskey});
+            }
             return;
         }
 
         if (window.console && console.log) {
-            console.log('mod_streamassign/uploader init', {cmid: cmid});
+            console.log('[streamassign] uploader init OK', {cmid: cmid});
         }
 
         var uploadUrl = wrapper.getAttribute('data-upload-url') || (window.M && M.cfg && M.cfg.wwwroot ? M.cfg.wwwroot + '/mod/streamassign/upload_video.php' : '/mod/streamassign/upload_video.php');
@@ -244,6 +275,8 @@ define([], function() {
 
         zone.addEventListener('click', function(e) {
             if (zone.classList.contains('streamassign-upload-uploading') || zone.classList.contains('streamassign-upload-done')) {
+                e.preventDefault();
+                e.stopPropagation();
                 return;
             }
             e.preventDefault();

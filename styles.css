@@ -22,6 +22,19 @@
     padding-left: 0 !important;
 }
 
+/* Submission form: more space between Submit video and Cancel buttons */
+.streamassign-submission-form .fitem.fitem_fgroup .felement,
+.streamassign-submission-form .fitem_actionbuttons .felement {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+.streamassign-submission-form .fitem .btn + .btn,
+.streamassign-submission-form .fitem input[type="submit"] + input[type="button"],
+.streamassign-submission-form .fitem input[type="submit"] + .btn {
+    margin-left: 1rem;
+}
+
 /* Grading page: spacing around "Back to activity" button */
 .streamassign-grading-back-wrap {
     margin-top: 1rem;
@@ -232,7 +245,7 @@
     width: 0;
     height: 0;
     opacity: 0;
-    pointer-events: none;
+    /* Do not use pointer-events: none - it can prevent the file dialog from opening when triggered by label or JS */
 }
 
 .streamassign-upload-zone-inner {
