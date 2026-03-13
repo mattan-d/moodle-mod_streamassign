@@ -111,6 +111,8 @@ define([], function() {
         var hiddenStreamId = findHidden(form, 'new_upload_stream_id');
         var videotitleInput = form.querySelector('input[type="text"][name*="videotitle"], input[type="text"][id*="videotitle"]');
         var filenameEl = wrapper.querySelector('#streamassign-upload-filename');
+        var readyMsgEl = wrapper.querySelector('#streamassign-upload-ready-msg');
+        var selectedFile = null;
 
         /** Resolve string from M.util.get_string (may be sync or Promise depending on Moodle version). */
         function getStr(key, fallback, callback) {
@@ -177,6 +179,9 @@ define([], function() {
             var uploadId = '';
             var title = getVideotitle();
             setState(false, true, false);
+            if (readyMsgEl) {
+                readyMsgEl.style.display = 'none';
+            }
             if (progressBar) {
                 progressBar.style.width = '0%';
             }
@@ -254,15 +259,7 @@ define([], function() {
                 });
             }
 
-            sendChunk(0).catch(function(err) {
-                if (window.console && console.error) {
-                    console.error('mod_streamassign/uploader error', err);
-                }
-                var fallback = err.message || 'Upload failed';
-                getStr('uploaderror', 'Upload failed', function(s) {
-                    showError(err.message || s || fallback);
-                });
-            });
+            return sendChunk(0);
         }
 
         function handleFile(file) {
@@ -270,18 +267,11 @@ define([], function() {
                 return;
             }
 
-            // Some browsers may not set file.type for videos; rely on server-side validation for safety.
             var name = file.name || '';
-            if (filenameEl) {
-                filenameEl.textContent = name;
-                filenameEl.style.display = 'block';
-            }
-
             if (window.console && console.log) {
                 console.log('mod_streamassign/uploader handleFile', {name: name, type: file.type});
             }
 
-            // Basic client-side check: allow if MIME starts with video/ or extension is common video type.
             var lower = name.toLowerCase();
             var looksVideo = (file.type && file.type.indexOf('video/') === 0) ||
                 lower.match(/\.(mp4|webm|mkv|avi|mov|mpeg|mpg|flv|wmv|ogv|ogg|vob)$/);
@@ -289,7 +279,22 @@ define([], function() {
                 getStr('uploaderror', 'Please select a video file.', showError);
                 return;
             }
-            uploadFile(file);
+
+            selectedFile = file;
+            setState(false, false, false);
+            if (doneEl) {
+                doneEl.style.display = 'none';
+            }
+            if (filenameEl) {
+                filenameEl.textContent = name;
+                filenameEl.style.display = 'block';
+            }
+            if (readyMsgEl) {
+                getStr('readytoupload', 'Click "Submit video" to upload this file.', function(s) {
+                    readyMsgEl.textContent = s;
+                    readyMsgEl.style.display = 'block';
+                });
+            }
         }
 
         zone.addEventListener('click', function(e) {
@@ -316,6 +321,37 @@ define([], function() {
                 handleFile(file);
             }
             fileInput.value = '';
+        });
+
+        form.addEventListener('submit', function(e) {
+            if (!selectedFile) {
+                return;
+            }
+            var streamIdVal = hiddenStreamId ? (hiddenStreamId.value || '0') : '0';
+            if (streamIdVal === '0' || streamIdVal === '') {
+                e.preventDefault();
+                e.stopPropagation();
+                var p = uploadFile(selectedFile);
+                if (p && typeof p.then === 'function') {
+                    p.then(function() {
+                        selectedFile = null;
+                        if (readyMsgEl) {
+                            readyMsgEl.style.display = 'none';
+                        }
+                        form.submit();
+                    }).catch(function(err) {
+                        if (window.console && console.error) {
+                            console.error('mod_streamassign/uploader error', err);
+                        }
+                        var fallback = (err && err.message) || 'Upload failed';
+                        getStr('uploaderror', 'Upload failed', function(s) {
+                            showError(s || fallback);
+                        });
+                    });
+                } else {
+                    form.submit();
+                }
+            }
         });
 
         zone.addEventListener('dragover', function(e) {

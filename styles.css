@@ -280,6 +280,12 @@
     word-break: break-all;
 }
 
+.streamassign-upload-ready-msg {
+    margin-top: 0.25rem;
+    font-size: 0.8125rem;
+    color: #6c757d;
+}
+
 .streamassign-upload-progress-wrapper {
     padding: 1.5rem;
     width: 100%;
