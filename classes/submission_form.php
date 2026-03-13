@@ -102,21 +102,38 @@ class submission_form extends \moodleform {
         $mform->setType('videotitle', PARAM_TEXT);
         $mform->addHelpButton('videotitle', 'videotitle', 'streamassign');
 
-        $options = [
-            'maxfiles' => 1,
-            'accepted_types' => ['video'],
-            'return_types' => \FILE_INTERNAL,
-        ];
-        $mform->addElement('filemanager', 'video_file', get_string('uploadvideo', 'streamassign'), null, $options);
+        // Custom upload drop zone (replaces filemanager to allow uploads up to 2GB via chunked upload).
+        $mform->addElement('hidden', 'new_upload_stream_id', 0);
+        $mform->setType('new_upload_stream_id', PARAM_INT);
+        $uploadurl = isset($customdata->uploadurl) ? $customdata->uploadurl : '';
+        $dropzonehtml = '<div class="streamassign-upload-zone-wrapper" data-cmid="' . (int) $cmid . '" data-sesskey="' . s(sesskey()) . '" data-upload-url="' . s($uploadurl) . '">';
+        $dropzonehtml .= '<div class="streamassign-upload-zone" id="streamassign-upload-zone" role="button" tabindex="0" aria-label="' . s(get_string('uploadvideo', 'streamassign')) . '">';
+        $dropzonehtml .= '<input type="file" class="streamassign-upload-file-input" id="streamassign-upload-file-input" accept="video/*" aria-hidden="true">';
+        $dropzonehtml .= '<div class="streamassign-upload-zone-inner">';
+        $dropzonehtml .= '<span class="streamassign-upload-icon" aria-hidden="true">↓</span>';
+        $dropzonehtml .= '<p class="streamassign-upload-text">' . s(get_string('uploadzonetext', 'streamassign')) . '</p>';
+        $dropzonehtml .= '<p class="streamassign-upload-hint">' . s(get_string('uploadzonehint', 'streamassign')) . '</p>';
+        $dropzonehtml .= '</div>';
+        $dropzonehtml .= '<div class="streamassign-upload-progress-wrapper" id="streamassign-upload-progress-wrapper" style="display:none;">';
+        $dropzonehtml .= '<div class="streamassign-upload-progress-bar" id="streamassign-upload-progress-bar"></div>';
+        $dropzonehtml .= '<span class="streamassign-upload-progress-text" id="streamassign-upload-progress-text">0%</span>';
+        $dropzonehtml .= '</div>';
+        $dropzonehtml .= '<div class="streamassign-upload-done" id="streamassign-upload-done" style="display:none;"></div>';
+        $dropzonehtml .= '</div></div>';
+        $mform->addElement('html', $dropzonehtml);
         $mform->addElement('static', 'allowedformats', '', get_string('allowedformats', 'streamassign'));
 
         if ($hasexisting) {
             $mform->disabledIf('videotitle', 'submission_type_group', 'neq', 'upload');
-            $mform->disabledIf('video_file', 'submission_type_group', 'neq', 'upload');
+            $mform->disabledIf('new_upload_stream_id', 'submission_type_group', 'neq', 'upload');
             $mform->disabledIf('allowedformats', 'submission_type_group', 'neq', 'upload');
         }
 
         $this->add_action_buttons(true, get_string('submitvideo', 'streamassign'));
+
+        $attrs = $mform->getAttributes();
+        $class = isset($attrs['class']) ? $attrs['class'] . ' streamassign-submission-form' : 'streamassign-submission-form';
+        $mform->updateAttributes(['class' => $class]);
     }
 
     /**
@@ -136,16 +153,9 @@ class submission_form extends \moodleform {
                 $errors['existing_video_id'] = get_string('pleaseselectvideo', 'streamassign');
             }
         } else {
-            $draftid = $data['video_file'] ?? 0;
-            if (empty($draftid)) {
-                $errors['video_file'] = get_string('required');
-            } else {
-                $usercontext = \context_user::instance($GLOBALS['USER']->id);
-                $fs = get_file_storage();
-                $draftfiles = $fs->get_area_files($usercontext->id, 'user', 'draft', $draftid, 'id', false);
-                if (empty($draftfiles)) {
-                    $errors['video_file'] = get_string('uploaderror', 'streamassign');
-                }
+            $newuploadid = isset($data['new_upload_stream_id']) ? (int) $data['new_upload_stream_id'] : 0;
+            if ($newuploadid <= 0) {
+                $errors['new_upload_stream_id'] = get_string('uploadvideo', 'streamassign') . ': ' . get_string('required');
             }
         }
         return $errors;

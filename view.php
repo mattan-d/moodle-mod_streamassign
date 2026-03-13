@@ -66,11 +66,13 @@ if ($cansubmit && $streamconfigured) {
     if (!$userlist->error && !empty($userlist->videos)) {
         $uservideos = $userlist->videos;
     }
-    $customdata = (object) ['context' => $context, 'cmid' => $cm->id, 'uservideos' => $uservideos];
+    $uploadurl = (new moodle_url('/mod/streamassign/upload_video.php'))->out(false);
+    $customdata = (object) ['context' => $context, 'cmid' => $cm->id, 'uservideos' => $uservideos, 'uploadurl' => $uploadurl];
     $submissionform = new \mod_streamassign\submission_form($PAGE->url, $customdata);
     if (!empty($uservideos)) {
         $PAGE->requires->js_call_amd('mod_streamassign/videopicker', 'init', []);
     }
+    $PAGE->requires->js_call_amd('mod_streamassign/uploader', 'init', []);
     if ($submissionform->is_cancelled()) {
         redirect($PAGE->url);
     }
@@ -94,21 +96,14 @@ if ($cansubmit && $streamconfigured) {
                 }
             }
         } else {
-            $draftid = $fromform->video_file ?? 0;
             $videotitle = $fromform->videotitle ?? '';
-            if ($draftid) {
-                $uploadresult = streamassign_handle_upload($context, $streamassign, $cm, $draftid, $videotitle);
-                if ($uploadresult->success) {
+            $newuploadid = isset($fromform->new_upload_stream_id) ? (int) $fromform->new_upload_stream_id : 0;
+            if ($newuploadid > 0) {
+                $saveresult = streamassign_handle_existing_video($streamassign, $cm, $newuploadid, $videotitle);
+                if ($saveresult->success) {
                     redirect($PAGE->url, get_string('uploadsuccess', 'streamassign'), null, \core\output\notification::NOTIFY_SUCCESS);
                 } else {
-                    $errmsg = get_string('uploaderror', 'streamassign');
-                    if ($uploadresult->message !== '') {
-                        $errmsg .= ': ' . $uploadresult->message;
-                    }
-                    if (!empty($uploadresult->debuginfo) && debugging('', DEBUG_DEVELOPER)) {
-                        $errmsg .= ' [' . s($uploadresult->debuginfo) . ']';
-                    }
-                    redirect($PAGE->url, $errmsg, null, \core\output\notification::NOTIFY_ERROR);
+                    redirect($PAGE->url, $saveresult->message ?: get_string('uploaderror', 'streamassign'), null, \core\output\notification::NOTIFY_ERROR);
                 }
             }
         }

@@ -1,3 +1,15 @@
+/* Submission form: align "How do you want to submit?" and "Upload a new video" headers */
+.streamassign-submission-form .fitem .d-flex.align-items-center.mb-2 {
+    padding-left: 0;
+    margin-left: 0;
+}
+.streamassign-submission-form .fitem .position-relative.ftoggler {
+    margin-left: 0;
+}
+.streamassign-submission-form .fitem .fheader {
+    margin-left: 0;
+}
+
 /* Grading page: spacing around "Back to activity" button */
 .streamassign-grading-back-wrap {
     margin-top: 1rem;
@@ -162,4 +174,119 @@
 .streamassign-video-card.selected .streamassign-video-title {
     background: #e7f1ff;
     color: #0a58ca;
+}
+
+/* Custom upload zone (replaces filemanager, allows up to 2GB) */
+.streamassign-upload-zone-wrapper {
+    margin: 0.5rem 0 1rem;
+}
+
+.streamassign-upload-zone {
+    position: relative;
+    min-height: 160px;
+    border: 2px dashed #ced4da;
+    border-radius: 8px;
+    background: #f8f9fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+}
+
+.streamassign-upload-zone:hover,
+.streamassign-upload-zone:focus {
+    border-color: #adb5bd;
+    background: #e9ecef;
+    outline: 0;
+}
+
+.streamassign-upload-zone.streamassign-upload-dragover {
+    border-color: #0d6efd;
+    background: #e7f1ff;
+}
+
+.streamassign-upload-zone.streamassign-upload-uploading {
+    cursor: default;
+}
+
+.streamassign-upload-zone.streamassign-upload-done {
+    cursor: default;
+    border-style: solid;
+}
+
+.streamassign-upload-file-input {
+    position: absolute;
+    width: 0;
+    height: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.streamassign-upload-zone-inner {
+    text-align: center;
+    padding: 1.5rem;
+}
+
+.streamassign-upload-icon {
+    display: block;
+    font-size: 2.5rem;
+    color: #6c757d;
+    margin-bottom: 0.5rem;
+    line-height: 1;
+}
+
+.streamassign-upload-text {
+    margin: 0 0 0.25rem;
+    font-size: 1rem;
+    color: #212529;
+}
+
+.streamassign-upload-hint {
+    margin: 0;
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.streamassign-upload-progress-wrapper {
+    padding: 1.5rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.streamassign-upload-progress-wrapper {
+    background: #e9ecef;
+    border-radius: 6px;
+    padding: 1rem;
+}
+
+.streamassign-upload-progress-bar {
+    display: block;
+    height: 10px;
+    width: 0;
+    min-width: 0;
+    max-width: 100%;
+    background: #0d6efd;
+    border-radius: 5px;
+    margin-bottom: 0.5rem;
+    transition: width 0.3s ease;
+}
+
+.streamassign-upload-progress-text {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.streamassign-upload-done {
+    padding: 1rem 1.5rem;
+    text-align: center;
+    font-size: 0.95rem;
+}
+
+.streamassign-upload-done.streamassign-upload-success {
+    color: #198754;
+}
+
+.streamassign-upload-done.streamassign-upload-error {
+    color: #dc3545;
 }
