@@ -21,7 +21,7 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-define([], function() {
+define(['core/str'], function(Str) {
     if (window.console && console.log) {
         console.log('[streamassign] uploader AMD module loaded');
     }
@@ -114,18 +114,15 @@ define([], function() {
         var readyMsgEl = wrapper.querySelector('#streamassign-upload-ready-msg');
         var selectedFile = null;
 
-        /** Resolve string from M.util.get_string (may be sync or Promise depending on Moodle version). */
+        /** Get string via core/str (Promise). */
         function getStr(key, fallback, callback) {
-            if (!window.M || !M.util || !M.util.get_string) {
-                callback(fallback);
-                return;
-            }
-            var result = M.util.get_string(key, 'mod_streamassign');
-            if (result && typeof result.then === 'function') {
-                result.then(function(s) { callback(s || fallback); }).catch(function() { callback(fallback); });
-            } else {
-                callback(typeof result === 'string' ? result : fallback);
-            }
+            Str.get_string(key, 'mod_streamassign')
+                .then(function(s) {
+                    callback(s || fallback);
+                })
+                .catch(function() {
+                    callback(fallback);
+                });
         }
 
         function getVideotitle() {
