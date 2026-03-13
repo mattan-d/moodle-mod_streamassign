@@ -1,5 +1,10 @@
-/* Submission form: align "How do you want to submit?" and "Upload a new video" headers */
-.streamassign-submission-form .fitem .d-flex.align-items-center.mb-2 {
+/* Submission form: align all section headers and menus (e.g. "How do you want to submit?", "Upload a new video") */
+.streamassign-submission-form .fitem {
+    padding-left: 0 !important;
+    margin-left: 0 !important;
+}
+.streamassign-submission-form .fitem .d-flex.align-items-center.mb-2,
+.streamassign-submission-form .fitem .row {
     padding-left: 0 !important;
     margin-left: 0 !important;
 }
@@ -9,30 +14,67 @@
 }
 .streamassign-submission-form .fitem .fheader {
     margin-left: 0 !important;
+    padding-left: 0 !important;
 }
 .streamassign-submission-form .fitem .fheader.me-3 {
     margin-right: 0.75rem !important;
 }
+.streamassign-submission-form .fitem .ftoggler,
 .streamassign-submission-form .fitem .ftoggler h3.mb-0 {
     margin-left: 0 !important;
     padding-left: 0 !important;
 }
-/* Ensure header section content aligns with header row */
 .streamassign-submission-form .fitem .fcontainer {
+    padding-left: 0 !important;
+    margin-left: 0 !important;
+}
+.streamassign-submission-form .fitem .felement {
+    padding-left: 0 !important;
+    margin-left: 0 !important;
+}
+.streamassign-submission-form .fitem.fitem_fgroup .col-md-9,
+.streamassign-submission-form .fitem.fitem_fgroup .col-md-3,
+.streamassign-submission-form .fitem .col-md-9,
+.streamassign-submission-form .fitem .col-md-3 {
+    padding-left: 0 !important;
+}
+.streamassign-submission-form .form-group,
+.streamassign-submission-form .mform .form-group {
+    margin-left: 0 !important;
     padding-left: 0 !important;
 }
 
 /* Submission form: more space between Submit video and Cancel buttons */
+.streamassign-buttons-wrap,
+.streamassign-submission-form .streamassign-buttons-wrap,
 .streamassign-submission-form .fitem.fitem_fgroup .felement,
-.streamassign-submission-form .fitem_actionbuttons .felement {
-    display: flex;
+.streamassign-submission-form .fitem_actionbuttons .felement,
+.streamassign-submission-form .fitem.fitem_fgroup,
+.streamassign-submission-form .fitem_actionbuttons {
+    display: flex !important;
     flex-wrap: wrap;
-    gap: 1rem;
+    gap: 1.5rem !important;
+    align-items: center;
+}
+.streamassign-buttons-wrap > input[type="submit"],
+.streamassign-buttons-wrap > input[type="button"],
+.streamassign-buttons-wrap > .btn {
+    margin-left: 0;
+    margin-right: 0;
+}
+.streamassign-buttons-wrap > * + * {
+    margin-left: 1.5rem;
 }
 .streamassign-submission-form .fitem .btn + .btn,
 .streamassign-submission-form .fitem input[type="submit"] + input[type="button"],
-.streamassign-submission-form .fitem input[type="submit"] + .btn {
-    margin-left: 1rem;
+.streamassign-submission-form .fitem input[type="submit"] + .btn,
+.streamassign-submission-form .fitem .felement .btn + .btn,
+.streamassign-submission-form .fitem .felement input[type="submit"] + input[type="button"],
+.streamassign-submission-form .fitem .felement input[type="submit"] + .btn {
+    margin-left: 1.5rem;
+}
+.streamassign-submission-form .fitem .felement > * + * {
+    margin-left: 1.5rem;
 }
 
 /* Grading page: spacing around "Back to activity" button */

@@ -90,7 +90,7 @@ class submission_form extends \moodleform {
                 $listhtml .= '<span class="streamassign-video-card-inner">' . $thumbhtml . '<span class="streamassign-video-title">' . s($title) . '</span></span>';
                 $listhtml .= '</label>';
             }
-            $listhtml .= '</div></div></div>';
+            $listhtml .= '</div></div>';
             $mform->addElement('html', $listhtml);
             $mform->disabledIf('existing_video_id', 'submission_type_group', 'neq', 'existing');
         } else {
