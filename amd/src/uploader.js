@@ -55,12 +55,12 @@ define([], function() {
         if (!wrapper) {
             return;
         }
-        var zone = document.getElementById('streamassign-upload-zone');
-        var fileInput = document.getElementById('streamassign-upload-file-input');
-        var progressWrapper = document.getElementById('streamassign-upload-progress-wrapper');
-        var progressBar = document.getElementById('streamassign-upload-progress-bar');
-        var progressText = document.getElementById('streamassign-upload-progress-text');
-        var doneEl = document.getElementById('streamassign-upload-done');
+        var zone = wrapper.querySelector('.streamassign-upload-zone') || document.getElementById('streamassign-upload-zone');
+        var fileInput = wrapper.querySelector('.streamassign-upload-file-input') || document.getElementById('streamassign-upload-file-input');
+        var progressWrapper = wrapper.querySelector('#streamassign-upload-progress-wrapper');
+        var progressBar = wrapper.querySelector('#streamassign-upload-progress-bar');
+        var progressText = wrapper.querySelector('#streamassign-upload-progress-text');
+        var doneEl = wrapper.querySelector('#streamassign-upload-done');
         var form = wrapper.closest('form');
         if (!zone || !fileInput || !form) {
             return;
@@ -72,12 +72,14 @@ define([], function() {
             return;
         }
 
-        var uploadUrl = wrapper.getAttribute('data-upload-url') || (window.M && M.cfg && M.cfg.wwwroot ? M.cfg.wwwroot + '/mod/streamassign/upload_video.php' : '');
-        if (!uploadUrl) {
-            return;
+        if (window.console && console.log) {
+            console.log('mod_streamassign/uploader init', {cmid: cmid});
         }
+
+        var uploadUrl = wrapper.getAttribute('data-upload-url') || (window.M && M.cfg && M.cfg.wwwroot ? M.cfg.wwwroot + '/mod/streamassign/upload_video.php' : '/mod/streamassign/upload_video.php');
         var hiddenStreamId = findHidden(form, 'new_upload_stream_id');
         var videotitleInput = form.querySelector('input[type="text"][name*="videotitle"], input[type="text"][id*="videotitle"]');
+        var filenameEl = wrapper.querySelector('#streamassign-upload-filename');
 
         function getVideotitle() {
             if (videotitleInput) {
@@ -118,6 +120,9 @@ define([], function() {
         }
 
         function uploadFile(file) {
+            if (window.console && console.log) {
+                console.log('mod_streamassign/uploader uploadFile', {name: file && file.name, size: file && file.size});
+            }
             if (file.size > MAX_SIZE) {
                 showError(window.M && M.util && M.util.get_string ? M.util.get_string('uploadtoolarge', 'streamassign') : 'File exceeds 2GB.');
                 return;
@@ -139,6 +144,10 @@ define([], function() {
                 var end = Math.min(start + CHUNK_SIZE, file.size);
                 var chunk = file.slice(start, end);
 
+                if (window.console && console.log) {
+                    console.log('mod_streamassign/uploader sendChunk', {index: index, start: start, end: end, totalChunks: totalChunks});
+                }
+
                 var formData = new FormData();
                 formData.append('id', cmid);
                 formData.append('sesskey', sesskey);
@@ -158,7 +167,16 @@ define([], function() {
                     body: formData,
                     credentials: 'same-origin'
                 }).then(function(response) {
-                    return response.json();
+                    return response.text().then(function(text) {
+                        if (window.console && console.log) {
+                            console.log('mod_streamassign/uploader response', {status: response.status, text: text});
+                        }
+                        try {
+                            return JSON.parse(text);
+                        } catch (e) {
+                            throw new Error('Invalid JSON from upload endpoint');
+                        }
+                    });
                 }).then(function(data) {
                     if (data.upload_id) {
                         uploadId = data.upload_id;
@@ -190,12 +208,34 @@ define([], function() {
             }
 
             sendChunk(0).catch(function(err) {
+                if (window.console && console.error) {
+                    console.error('mod_streamassign/uploader error', err);
+                }
                 showError(err.message || (window.M && M.util && M.util.get_string ? M.util.get_string('uploaderror', 'streamassign') : 'Upload failed'));
             });
         }
 
         function handleFile(file) {
-            if (!file || !file.type.match(/^video\//)) {
+            if (!file) {
+                return;
+            }
+
+            // Some browsers may not set file.type for videos; rely on server-side validation for safety.
+            var name = file.name || '';
+            if (filenameEl) {
+                filenameEl.textContent = name;
+                filenameEl.style.display = 'block';
+            }
+
+            if (window.console && console.log) {
+                console.log('mod_streamassign/uploader handleFile', {name: name, type: file.type});
+            }
+
+            // Basic client-side check: allow if MIME starts with video/ or extension is common video type.
+            var lower = name.toLowerCase();
+            var looksVideo = (file.type && file.type.indexOf('video/') === 0) ||
+                lower.match(/\.(mp4|webm|mkv|avi|mov|mpeg|mpg|flv|wmv|ogv|ogg|vob)$/);
+            if (!looksVideo) {
                 showError(window.M && M.util && M.util.get_string ? M.util.get_string('uploaderror', 'streamassign') : 'Please select a video file.');
                 return;
             }
@@ -203,14 +243,19 @@ define([], function() {
         }
 
         zone.addEventListener('click', function(e) {
-            if (!zone.classList.contains('streamassign-upload-uploading') && !zone.classList.contains('streamassign-upload-done')) {
-                fileInput.click();
+            if (zone.classList.contains('streamassign-upload-uploading') || zone.classList.contains('streamassign-upload-done')) {
+                return;
             }
-        });
+            e.preventDefault();
+            e.stopPropagation();
+            fileInput.removeAttribute('disabled');
+            fileInput.click();
+        }, true);
 
         zone.addEventListener('keydown', function(e) {
             if ((e.key === 'Enter' || e.key === ' ') && !zone.classList.contains('streamassign-upload-uploading')) {
                 e.preventDefault();
+                fileInput.removeAttribute('disabled');
                 fileInput.click();
             }
         });

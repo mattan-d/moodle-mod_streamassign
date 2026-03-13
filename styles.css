@@ -1,13 +1,25 @@
 /* Submission form: align "How do you want to submit?" and "Upload a new video" headers */
 .streamassign-submission-form .fitem .d-flex.align-items-center.mb-2 {
-    padding-left: 0;
-    margin-left: 0;
+    padding-left: 0 !important;
+    margin-left: 0 !important;
 }
 .streamassign-submission-form .fitem .position-relative.ftoggler {
-    margin-left: 0;
+    margin-left: 0 !important;
+    padding-left: 0 !important;
 }
 .streamassign-submission-form .fitem .fheader {
-    margin-left: 0;
+    margin-left: 0 !important;
+}
+.streamassign-submission-form .fitem .fheader.me-3 {
+    margin-right: 0.75rem !important;
+}
+.streamassign-submission-form .fitem .ftoggler h3.mb-0 {
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+}
+/* Ensure header section content aligns with header row */
+.streamassign-submission-form .fitem .fcontainer {
+    padding-left: 0 !important;
 }
 
 /* Grading page: spacing around "Back to activity" button */
@@ -246,6 +258,13 @@
     margin: 0;
     font-size: 0.875rem;
     color: #6c757d;
+}
+
+.streamassign-upload-filename {
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    color: #212529;
+    word-break: break-all;
 }
 
 .streamassign-upload-progress-wrapper {
