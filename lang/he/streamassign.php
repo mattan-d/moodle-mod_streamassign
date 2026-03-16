@@ -76,6 +76,7 @@ $string['nosubmissionsgrading'] = 'אין הגשות לציון.';
 $string['backtoactivity'] = 'חזרה לפעילות';
 $string['feedback'] = 'הערות';
 $string['clearfilter'] = 'הצג הכל';
+$string['grade'] = 'ציון';
 
 // Submission summary (view page, for graders)
 $string['submissionsummary'] = 'סיכום הגשות';

@@ -76,6 +76,7 @@ $string['nosubmissionsgrading'] = 'No submissions to grade.';
 $string['backtoactivity'] = 'Back to activity';
 $string['feedback'] = 'Feedback';
 $string['clearfilter'] = 'Show all';
+$string['grade'] = 'Grade';
 
 // Submission summary (view page, for graders)
 $string['submissionsummary'] = 'Submission summary';

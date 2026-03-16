@@ -80,8 +80,14 @@ if (data_submitted() && confirm_sesskey()) {
         $grade = null;
         if ($grademax > 0 && isset($grades[$userid])) {
             $grade = $grades[$userid] === '' || $grades[$userid] === null ? null : (float) $grades[$userid];
-            if ($grade !== null && ($grade < 0 || $grade > $grademax)) {
-                $grade = null;
+            if ($grade !== null) {
+                // Clamp to valid range and remove digits after decimal.
+                if ($grade < 0) {
+                    $grade = 0;
+                } else if ($grade > $grademax) {
+                    $grade = $grademax;
+                }
+                $grade = (int) round($grade);
             }
         }
         $feedback = isset($feedbacks[$userid]) ? trim($feedbacks[$userid]) : null;
@@ -228,10 +234,10 @@ foreach ($submissions as $row) {
         $tablerow[] = html_writer::empty_tag('input', [
             'type' => 'number',
             'name' => 'grade[' . $user->id . ']',
-            'value' => $row->currentgrade !== null ? (string) $row->currentgrade : '',
+            'value' => $row->currentgrade !== null ? (string) (int) round($row->currentgrade) : '',
             'min' => 0,
             'max' => $grademax,
-            'step' => 'any',
+            'step' => 1,
             'size' => 5,
         ]);
         $tablerow[] = html_writer::tag('textarea', s($row->currentfeedback), [
