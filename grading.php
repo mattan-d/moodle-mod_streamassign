@@ -193,7 +193,7 @@ $table->head = [
     get_string('watchvideo', 'streamassign'),
 ];
 if ($showgrades) {
-    $table->head[] = get_string('grade') . ' / ' . $grademax;
+    $table->head[] = get_string('grade', 'streamassign') . ' / ' . $grademax;
     $table->head[] = get_string('feedback', 'streamassign');
 }
 $table->attributes['class'] = 'generaltable streamassign-grading-table';
@@ -238,7 +238,8 @@ foreach ($submissions as $row) {
             'min' => 0,
             'max' => $grademax,
             'step' => 1,
-            'size' => 5,
+            'class' => 'form-control',
+            'style' => 'max-width: 6rem;',
         ]);
         $tablerow[] = html_writer::tag('textarea', s($row->currentfeedback), [
             'name' => 'feedback[' . $user->id . ']',
