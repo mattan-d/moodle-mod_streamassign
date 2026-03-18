@@ -59,6 +59,7 @@ $string['privacy:metadata:core_grades'] = 'Grades and feedback are stored in the
 $string['privacy:metadata:streamplatform'] = 'Video files are uploaded to an external Stream platform; user email and name may be sent for ownership.';
 $string['privacy:metadata:streamplatform:userid'] = 'User identifier may be sent to the Stream platform for ownership.';
 $string['privacy:metadata:streamplatform:videotitle'] = 'Video title is sent to the Stream platform.';
+$string['privacy:metadata:streamplatform_reachability'] = 'The plugin contacts the configured Stream URL from the activity settings page to verify server reachability. No personal data is sent in this request.';
 
 // Settings page - connection status
 $string['connectionstatus'] = 'Stream connection status';

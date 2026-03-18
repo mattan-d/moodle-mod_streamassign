@@ -61,6 +61,8 @@ class provider implements
             'videotitle' => 'privacy:metadata:streamplatform:videotitle',
         ], 'privacy:metadata:streamplatform');
 
+        $collection->add_external_location_link('streamplatform_reachability', [], 'privacy:metadata:streamplatform_reachability');
+
         return $collection;
     }
 
