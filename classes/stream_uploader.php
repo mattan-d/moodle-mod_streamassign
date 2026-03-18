@@ -166,20 +166,12 @@ class stream_uploader {
         }
 
         $url = $baseurl . '/webservice/api/moodle-upload';
-        $ch = curl_init($url);
-        curl_setopt_array($ch, [
-            CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => $postdata,
-            CURLOPT_HTTPHEADER => [
-                'Authorization: Bearer ' . $apikey,
-            ],
-            CURLOPT_RETURNTRANSFER => true,
-        ]);
+        $curl = new \curl();
+        $curl->setHeader('Authorization: Bearer ' . $apikey);
+        $response = $curl->post($url, $postdata);
 
-        $response = curl_exec($ch);
-        $httpcode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $curlerr = curl_error($ch);
-        curl_close($ch);
+        $httpcode = (int) ($curl->get_info()['http_code'] ?? 0);
+        $curlerr = $curl->error ?? '';
 
         $data = json_decode($response, true);
         $debugparts = ['HTTP ' . $httpcode];
@@ -238,16 +230,9 @@ class stream_uploader {
         }
 
         $url = $baseurl . '/webservice/api/video-thumbnail?id=' . (int) $videoid;
-        $ch = curl_init($url);
-        curl_setopt_array($ch, [
-            CURLOPT_HTTPHEADER => [
-                'Authorization: Bearer ' . $apikey,
-            ],
-            CURLOPT_RETURNTRANSFER => true,
-        ]);
-
-        $response = curl_exec($ch);
-        curl_close($ch);
+        $curl = new \curl();
+        $curl->setHeader('Authorization: Bearer ' . $apikey);
+        $response = $curl->get($url);
 
         $data = is_string($response) ? json_decode($response, true) : null;
         $thumb = null;
@@ -284,18 +269,14 @@ class stream_uploader {
         $limit = max(1, min(100, (int) $limit));
         $offset = max(0, (int) $offset);
 
-        $url = $baseurl . '/webservice/api/user-videos?' . http_build_query([
+        $url = $baseurl . '/webservice/api/user-videos';
+        $curl = new \curl();
+        $curl->setHeader('Authorization: Bearer ' . $apikey);
+        $response = $curl->get($url, [
             'email' => $email,
             'limit' => $limit,
             'offset' => $offset,
         ]);
-        $ch = curl_init($url);
-        curl_setopt_array($ch, [
-            CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . $apikey],
-            CURLOPT_RETURNTRANSFER => true,
-        ]);
-        $response = curl_exec($ch);
-        curl_close($ch);
 
         $data = is_string($response) ? json_decode($response, true) : null;
         if (!is_array($data)) {
