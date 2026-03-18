@@ -50,7 +50,15 @@ $string['activitynotavailableyet'] = 'This activity is not available until {$a}.
 $string['activityclosed'] = 'This activity closed on {$a}.';
 $string['nostreamassignments'] = 'No Stream assignments';
 $string['privacy:metadata:streamassign_submission'] = 'Stores the Stream video ID and submission time for each user.';
+$string['privacy:metadata:streamassign_submission:userid'] = 'The user who made the submission.';
+$string['privacy:metadata:streamassign_submission:streamid'] = 'The video ID on the external Stream platform.';
+$string['privacy:metadata:streamassign_submission:videotitle'] = 'The title of the submitted video.';
+$string['privacy:metadata:streamassign_submission:timecreated'] = 'When the submission was created.';
+$string['privacy:metadata:streamassign_submission:timemodified'] = 'When the submission was last modified.';
+$string['privacy:metadata:core_grades'] = 'Grades and feedback are stored in the Moodle gradebook.';
 $string['privacy:metadata:streamplatform'] = 'Video files are uploaded to an external Stream platform; user email and name may be sent for ownership.';
+$string['privacy:metadata:streamplatform:userid'] = 'User identifier may be sent to the Stream platform for ownership.';
+$string['privacy:metadata:streamplatform:videotitle'] = 'Video title is sent to the Stream platform.';
 
 // Settings page - connection status
 $string['connectionstatus'] = 'Stream connection status';

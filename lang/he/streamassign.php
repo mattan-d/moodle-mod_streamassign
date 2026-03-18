@@ -50,7 +50,15 @@ $string['activitynotavailableyet'] = 'פעילות זו אינה זמינה עד
 $string['activityclosed'] = 'פעילות זו נסגרה ב-{$a}.';
 $string['nostreamassignments'] = 'אין מטלות Stream';
 $string['privacy:metadata:streamassign_submission'] = 'מאחסן את מזהה הוידאו ב-Stream וזמן ההגשה לכל משתמש.';
+$string['privacy:metadata:streamassign_submission:userid'] = 'המשתמש שביצע את ההגשה.';
+$string['privacy:metadata:streamassign_submission:streamid'] = 'מזהה הוידאו במערכת Stream החיצונית.';
+$string['privacy:metadata:streamassign_submission:videotitle'] = 'כותרת הוידאו שהוגש.';
+$string['privacy:metadata:streamassign_submission:timecreated'] = 'מתי נוצרה ההגשה.';
+$string['privacy:metadata:streamassign_submission:timemodified'] = 'מתי עודכנה ההגשה לאחרונה.';
+$string['privacy:metadata:core_grades'] = 'ציונים והערות נשמרים במערכת הציונים של Moodle.';
 $string['privacy:metadata:streamplatform'] = 'קבצי וידאו מועלים למערכת Stream חיצונית; אימייל ושם משתמש עשויים להישלח לצורכי בעלות.';
+$string['privacy:metadata:streamplatform:userid'] = 'מזהה משתמש עשוי להישלח למערכת Stream לצורכי בעלות.';
+$string['privacy:metadata:streamplatform:videotitle'] = 'כותרת הוידאו נשלחת למערכת Stream.';
 
 // Settings page - connection status
 $string['connectionstatus'] = 'סטטוס חיבור ל-Stream';
