@@ -54,6 +54,7 @@ class backup_streamassign_activity_structure_step extends backup_activity_struct
         $submissions->add_child($submission);
 
         $streamassign->set_source_table('streamassign', ['id' => backup::VAR_ACTIVITYID]);
+        $streamassign->annotate_files('mod_streamassign', 'intro', null);
         if ($userinfo) {
             $submission->set_source_table('streamassign_submission', ['streamassignid' => backup::VAR_PARENTID]);
         }

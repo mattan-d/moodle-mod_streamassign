@@ -38,7 +38,7 @@ class restore_streamassign_activity_structure_step extends restore_activity_stru
         $paths = [];
         $paths[] = new restore_path_element('streamassign', '/activity/streamassign');
         $paths[] = new restore_path_element('submission', '/activity/streamassign/submissions/submission');
-        return $paths;
+        return $this->prepare_activity_structure($paths);
     }
 
     /**
