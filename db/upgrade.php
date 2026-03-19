@@ -39,5 +39,9 @@ function xmldb_streamassign_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026031801, 'streamassign');
     }
 
+    if ($oldversion < 2026031802) {
+        upgrade_mod_savepoint(true, 2026031802, 'streamassign');
+    }
+
     return true;
 }
