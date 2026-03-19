@@ -31,6 +31,7 @@ defined('MOODLE_INTERNAL') || die();
  * @return bool true on success.
  */
 function xmldb_streamassign_upgrade($oldversion) {
+    global $DB, $CFG;
     if ($oldversion < 2025031100) {
         upgrade_mod_savepoint(true, 2025031100, 'streamassign');
     }
@@ -41,6 +42,18 @@ function xmldb_streamassign_upgrade($oldversion) {
 
     if ($oldversion < 2026031802) {
         upgrade_mod_savepoint(true, 2026031802, 'streamassign');
+    }
+
+    if ($oldversion < 2026031803) {
+        require_once($CFG->dirroot . '/mod/streamassign/lib.php');
+
+        $instances = $DB->get_records('streamassign');
+        foreach ($instances as $instance) {
+            // Rebuild gradebook item type (value/scale/none) for existing activities.
+            streamassign_grade_item_update($instance);
+        }
+
+        upgrade_mod_savepoint(true, 2026031803, 'streamassign');
     }
 
     return true;

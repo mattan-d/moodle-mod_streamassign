@@ -62,11 +62,31 @@ $PAGE->set_title(format_string($streamassign->name) . ' - ' . get_string('gradin
 $PAGE->set_heading(format_string($course->fullname));
 
 $streamurl = \mod_streamassign\stream_uploader::get_stream_base_url();
-$grademax = (int) $streamassign->grade;
+$gradevalue = (int) $streamassign->grade;
+$isnumericgrade = $gradevalue > 0;
+$isscalegrade = $gradevalue < 0;
+$grademax = $isnumericgrade ? $gradevalue : 0;
+$scaleoptions = [];
+$scalename = '';
+if ($isscalegrade) {
+    $scale = $DB->get_record('scale', ['id' => -$gradevalue], 'id,name,scale');
+    if ($scale && trim((string) $scale->scale) !== '') {
+        $scalename = (string) $scale->name;
+        $parts = array_map('trim', explode(',', (string) $scale->scale));
+        foreach ($parts as $idx => $label) {
+            if ($label === '') {
+                continue;
+            }
+            $scaleoptions[$idx + 1] = $label;
+        }
+    } else {
+        $isscalegrade = false;
+    }
+}
 
 // Process save grades and feedback.
 if (data_submitted() && confirm_sesskey()) {
-    $grades = optional_param_array('grade', [], PARAM_FLOAT);
+    $grades = optional_param_array('grade', [], PARAM_RAW);
     $feedbacks = optional_param_array('feedback', [], PARAM_TEXT);
     // Only update users that appear in the form (current page); keys are user ids.
     $useridsonsubmit = array_unique(array_merge(array_keys($grades), array_keys($feedbacks)));
@@ -78,9 +98,12 @@ if (data_submitted() && confirm_sesskey()) {
             continue;
         }
         $grade = null;
-        if ($grademax > 0 && isset($grades[$userid])) {
-            $grade = $grades[$userid] === '' || $grades[$userid] === null ? null : (float) $grades[$userid];
-            if ($grade !== null) {
+        if (isset($grades[$userid])) {
+            $submittedgrade = $grades[$userid];
+            if ($submittedgrade === '' || $submittedgrade === null) {
+                $grade = null;
+            } else if ($isnumericgrade) {
+                $grade = (float) $submittedgrade;
                 // Clamp to valid range and remove digits after decimal.
                 if ($grade < 0) {
                     $grade = 0;
@@ -88,6 +111,11 @@ if (data_submitted() && confirm_sesskey()) {
                     $grade = $grademax;
                 }
                 $grade = (int) round($grade);
+            } else if ($isscalegrade) {
+                $grade = (int) $submittedgrade;
+                if (!array_key_exists($grade, $scaleoptions)) {
+                    $grade = null;
+                }
             }
         }
         $feedback = isset($feedbacks[$userid]) ? trim($feedbacks[$userid]) : null;
@@ -177,7 +205,7 @@ if (empty($submissions)) {
     exit;
 }
 
-$showgrades = ($grademax > 0);
+$showgrades = $isnumericgrade || $isscalegrade;
 $showform = true;
 if ($showform) {
     echo html_writer::start_tag('form', ['method' => 'post', 'action' => $PAGE->url->out(false), 'id' => 'streamassign-grading-form']);
@@ -193,7 +221,11 @@ $table->head = [
     get_string('watchvideo', 'streamassign'),
 ];
 if ($showgrades) {
-    $table->head[] = get_string('grade', 'streamassign') . ' / ' . $grademax;
+    if ($isnumericgrade) {
+        $table->head[] = get_string('grade', 'streamassign') . ' / ' . $grademax;
+    } else {
+        $table->head[] = get_string('grade', 'streamassign') . ($scalename !== '' ? ' / ' . s($scalename) : '');
+    }
     $table->head[] = get_string('feedback', 'streamassign');
 }
 $table->attributes['class'] = 'generaltable streamassign-grading-table';
@@ -231,16 +263,23 @@ foreach ($submissions as $row) {
         $watchlink,
     ];
     if ($showgrades) {
-        $tablerow[] = html_writer::empty_tag('input', [
-            'type' => 'number',
-            'name' => 'grade[' . $user->id . ']',
-            'value' => $row->currentgrade !== null ? (string) (int) round($row->currentgrade) : '',
-            'min' => 0,
-            'max' => $grademax,
-            'step' => 1,
-            'class' => 'form-control',
-            'style' => 'max-width: 6rem;',
-        ]);
+        if ($isnumericgrade) {
+            $tablerow[] = html_writer::empty_tag('input', [
+                'type' => 'number',
+                'name' => 'grade[' . $user->id . ']',
+                'value' => $row->currentgrade !== null ? (string) (int) round($row->currentgrade) : '',
+                'min' => 0,
+                'max' => $grademax,
+                'step' => 1,
+                'class' => 'form-control',
+                'style' => 'max-width: 6rem;',
+            ]);
+        } else {
+            $selectname = 'grade[' . $user->id . ']';
+            $selectoptions = ['' => ''] + $scaleoptions;
+            $selected = ($row->currentgrade !== null && $row->currentgrade !== '') ? (string) (int) round((float) $row->currentgrade) : '';
+            $tablerow[] = html_writer::select($selectoptions, $selectname, $selected, false, ['class' => 'custom-select']);
+        }
         $tablerow[] = html_writer::tag('textarea', s($row->currentfeedback), [
             'name' => 'feedback[' . $user->id . ']',
             'rows' => 2,

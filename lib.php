@@ -245,10 +245,14 @@ function streamassign_grade_item_update($streamassign, $grades = null, $delete =
         );
     }
 
-    if (!empty($streamassign->grade)) {
+    $grade = isset($streamassign->grade) ? (int) $streamassign->grade : 0;
+    if ($grade > 0) {
         $item['gradetype'] = GRADE_TYPE_VALUE;
-        $item['grademax'] = $streamassign->grade;
+        $item['grademax'] = $grade;
         $item['grademin'] = 0;
+    } else if ($grade < 0) {
+        $item['gradetype'] = GRADE_TYPE_SCALE;
+        $item['scaleid'] = -$grade;
     } else {
         $item['gradetype'] = GRADE_TYPE_NONE;
     }
@@ -291,4 +295,38 @@ function streamassign_get_coursemodule_info($cm) {
     $info->name = $streamassign->name;
     $info->content = format_module_intro('streamassign', $streamassign, $cm->id, false);
     return $info;
+}
+
+/**
+ * Extend activity settings navigation with grading shortcut.
+ *
+ * @param settings_navigation $settingsnav
+ * @param navigation_node $streamassignnode
+ * @return void
+ */
+function streamassign_extend_settings_navigation($settingsnav, $streamassignnode = null) {
+    global $PAGE;
+
+    if (empty($PAGE->cm) || $PAGE->cm->modname !== 'streamassign') {
+        return;
+    }
+
+    $context = context_module::instance($PAGE->cm->id);
+    if (!has_capability('mod/streamassign:grade', $context)) {
+        return;
+    }
+
+    $gradingurl = new moodle_url('/mod/streamassign/grading.php', ['id' => $PAGE->cm->id]);
+    $parentnode = $streamassignnode ?: $settingsnav;
+    $node = $parentnode->add(
+        get_string('viewgrading', 'streamassign'),
+        $gradingurl,
+        navigation_node::TYPE_SETTING,
+        null,
+        'streamassigngrading'
+    );
+
+    if ($PAGE->url->compare($gradingurl, URL_MATCH_BASE)) {
+        $node->make_active();
+    }
 }
