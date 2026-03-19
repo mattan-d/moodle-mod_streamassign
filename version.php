@@ -28,7 +28,7 @@ $plugin->version   = 2026031803;
 $plugin->requires  = 2017111300;
 $plugin->component = 'mod_streamassign';
 $plugin->maturity  = MATURITY_STABLE;
-$plugin->release   = '1.4';
+$plugin->release   = '1.5';
 
 // local_stream is required (provides Stream URL and API key).
 $plugin->dependencies = [
