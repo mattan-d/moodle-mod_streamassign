@@ -307,7 +307,7 @@ function streamassign_get_coursemodule_info($cm) {
 function streamassign_extend_settings_navigation($settingsnav, $streamassignnode = null) {
     global $PAGE;
 
-    if (empty($PAGE->cm) || $PAGE->cm->modname !== 'streamassign') {
+    if ($PAGE->cm->modname !== 'streamassign') {
         return;
     }
 
