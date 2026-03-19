@@ -26,6 +26,7 @@ $string['streamassign:view'] = 'צפייה במטלת Stream';
 $string['streamassign:submit'] = 'הגשת וידאו למטלת Stream';
 $string['streamassign:addinstance'] = 'הוספת מטלת Stream';
 $string['streamassign:grade'] = 'ציון מטלת Stream';
+$string['messageprovider:submission'] = 'התראות על הגשות במטלת Stream';
 
 $string['streamassignsettings'] = 'הגדרות הגשת מטלה Stream';
 $string['streamurl_required'] = 'כתובת Stream ומפתח API חייבים להיות מוגדרים בתוסף local_stream (ניהול אתר → תוספים → תוספים מקומיים → Stream).';
@@ -110,3 +111,9 @@ $string['searchmyvideos'] = 'חיפוש סרטונים...';
 $string['selected'] = 'נבחר';
 
 $string['videoprocessing'] = 'הסרטון עדיין בעיבוד. הנגן יופיע כאן כשיהיה מוכן (נבדוק כל 30 שניות).';
+$string['notificationnewsubmission'] = '{$a->student} הגיש/ה וידאו ב-{$a->activity}.';
+$string['notificationnewsubmissionbody'] = 'התקבלה הגשת וידאו חדשה.' . "\n"
+    . 'סטודנט/ית: {$a->student}' . "\n"
+    . 'קורס: {$a->course}' . "\n"
+    . 'פעילות: {$a->activity}' . "\n"
+    . 'כותרת וידאו: {$a->videotitle}';

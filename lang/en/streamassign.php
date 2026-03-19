@@ -26,6 +26,7 @@ $string['streamassign:view'] = 'View Stream assignment';
 $string['streamassign:submit'] = 'Submit video to Stream assignment';
 $string['streamassign:addinstance'] = 'Add a new Stream assignment';
 $string['streamassign:grade'] = 'Grade Stream assignment';
+$string['messageprovider:submission'] = 'Stream assignment submission notifications';
 
 $string['streamassignsettings'] = 'Stream assignment settings';
 $string['streamurl_required'] = 'Stream URL and API key must be configured in the local_stream plugin (Site administration → Plugins → Local plugins → Stream).';
@@ -110,3 +111,9 @@ $string['searchmyvideos'] = 'Search videos...';
 $string['selected'] = 'Selected';
 
 $string['videoprocessing'] = 'Your video is still being processed. The player will appear here when it is ready (we check every 30 seconds).';
+$string['notificationnewsubmission'] = '{$a->student} submitted a video in {$a->activity}.';
+$string['notificationnewsubmissionbody'] = 'A new video assignment was submitted.' . "\n"
+    . 'Student: {$a->student}' . "\n"
+    . 'Course: {$a->course}' . "\n"
+    . 'Activity: {$a->activity}' . "\n"
+    . 'Video title: {$a->videotitle}';

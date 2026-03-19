@@ -23,6 +23,68 @@ require_once(__DIR__ . '/lib.php');
 require_once(__DIR__ . '/classes/stream_uploader.php');
 
 /**
+ * Notify graders that a student submitted a video.
+ *
+ * @param stdClass $streamassign Activity record.
+ * @param stdClass $cm Course module record.
+ * @param stdClass $student User record of submitter.
+ * @param string $videotitle Submitted video title.
+ * @return void
+ */
+function streamassign_notify_graders_submission(\stdClass $streamassign, \stdClass $cm, \stdClass $student, string $videotitle): void {
+    global $DB;
+
+    $context = \context_module::instance((int) $cm->id);
+    $course = $DB->get_record('course', ['id' => $streamassign->course], 'id,fullname', MUST_EXIST);
+
+    $graders = get_enrolled_users(
+        $context,
+        'mod/streamassign:grade',
+        0,
+        'u.id,u.email,u.deleted,u.suspended,u.firstname,u.lastname'
+    );
+    if (empty($graders)) {
+        return;
+    }
+
+    $studentname = fullname($student);
+    $activityname = format_string($streamassign->name, true, ['context' => $context]);
+    $submittedtitle = trim($videotitle) !== '' ? $videotitle : get_string('videotitle', 'streamassign');
+    $subject = get_string('messageprovider:submission', 'streamassign') . ': ' . $activityname;
+    $smallmessage = get_string('notificationnewsubmission', 'streamassign', (object) [
+        'student' => $studentname,
+        'activity' => $activityname,
+    ]);
+    $messagebody = get_string('notificationnewsubmissionbody', 'streamassign', (object) [
+        'student' => $studentname,
+        'activity' => $activityname,
+        'course' => format_string($course->fullname, true, ['context' => \context_course::instance($course->id)]),
+        'videotitle' => $submittedtitle,
+    ]);
+    $url = new \moodle_url('/mod/streamassign/grading.php', ['id' => $cm->id]);
+
+    foreach ($graders as $grader) {
+        if ((int) $grader->id === (int) $student->id || !empty($grader->deleted) || !empty($grader->suspended)) {
+            continue;
+        }
+        $eventdata = new \core\message\message();
+        $eventdata->component = 'mod_streamassign';
+        $eventdata->name = 'submission';
+        $eventdata->userfrom = \core_user::get_noreply_user();
+        $eventdata->userto = $grader;
+        $eventdata->subject = $subject;
+        $eventdata->fullmessage = $messagebody;
+        $eventdata->fullmessageformat = FORMAT_PLAIN;
+        $eventdata->fullmessagehtml = '';
+        $eventdata->smallmessage = $smallmessage;
+        $eventdata->contexturl = $url->out(false);
+        $eventdata->contexturlname = $activityname;
+        $eventdata->courseid = (int) $streamassign->course;
+        message_send($eventdata);
+    }
+}
+
+/**
  * Handle video upload: get file from draft, send to Stream API, save submission.
  *
  * @param context_module $context
@@ -105,6 +167,7 @@ function streamassign_handle_upload($context, $streamassign, $cm, $draftid, $vid
         ]);
     }
 
+    streamassign_notify_graders_submission($streamassign, $cm, $USER, $title);
     $result->success = true;
     return $result;
 }
@@ -151,6 +214,7 @@ function streamassign_handle_existing_video($streamassign, $cm, $streamid, $vide
         ]);
     }
 
+    streamassign_notify_graders_submission($streamassign, $cm, $USER, $title);
     $result->success = true;
     return $result;
 }

@@ -15,29 +15,20 @@
 // along with Moodle. If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Stream assignment module upgrade code.
+ * Message providers for mod_streamassign.
  *
  * @package    mod_streamassign
- * @copyright  2025 CentricApp LTD, Dev Team (dev@centricapp.co)
+ * @copyright  2026 CentricApp LTD
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-/**
- * Upgrade the mod_streamassign database.
- *
- * @param int $oldversion The version we are upgrading from.
- * @return bool true on success.
- */
-function xmldb_streamassign_upgrade($oldversion) {
-    if ($oldversion < 2025031100) {
-        upgrade_mod_savepoint(true, 2025031100, 'streamassign');
-    }
-
-    if ($oldversion < 2026031801) {
-        upgrade_mod_savepoint(true, 2026031801, 'streamassign');
-    }
-
-    return true;
-}
+$messageproviders = [
+    'submission' => [
+        'defaults' => [
+            'popup' => MESSAGE_PERMITTED + MESSAGE_DEFAULT_LOGGEDIN + MESSAGE_DEFAULT_LOGGEDOFF,
+            'email' => MESSAGE_PERMITTED + MESSAGE_DEFAULT_LOGGEDIN + MESSAGE_DEFAULT_LOGGEDOFF,
+        ],
+    ],
+];
