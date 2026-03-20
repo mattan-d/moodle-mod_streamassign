@@ -32,19 +32,8 @@ defined('MOODLE_INTERNAL') || die();
  */
 function xmldb_streamassign_upgrade($oldversion) {
     global $DB, $CFG;
-    if ($oldversion < 2025031100) {
-        upgrade_mod_savepoint(true, 2025031100, 'streamassign');
-    }
 
-    if ($oldversion < 2026031801) {
-        upgrade_mod_savepoint(true, 2026031801, 'streamassign');
-    }
-
-    if ($oldversion < 2026031802) {
-        upgrade_mod_savepoint(true, 2026031802, 'streamassign');
-    }
-
-    if ($oldversion < 2026031803) {
+    if ($oldversion < 2026032000) {
         require_once($CFG->dirroot . '/mod/streamassign/lib.php');
 
         $instances = $DB->get_records('streamassign');
@@ -53,7 +42,7 @@ function xmldb_streamassign_upgrade($oldversion) {
             streamassign_grade_item_update($instance);
         }
 
-        upgrade_mod_savepoint(true, 2026031803, 'streamassign');
+        upgrade_mod_savepoint(true, 2026032000, 'streamassign');
     }
 
     return true;
