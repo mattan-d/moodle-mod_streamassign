@@ -40,6 +40,7 @@ class mod_streamassign_mod_form extends moodleform_mod {
         $mform->addElement('header', 'timing', get_string('timing', 'form'));
         $mform->addElement('date_time_selector', 'timeopen', get_string('allowsubmissionsfromdate', 'assign'), ['optional' => true]);
         $mform->addElement('date_time_selector', 'timeclose', get_string('duedate', 'assign'), ['optional' => true]);
+        $mform->addElement('header', 'submissionsettings', get_string('submissionsettings', 'streamassign'));
         $mform->addElement('advcheckbox', 'preventlatesubmission', get_string('preventlatesubmission', 'streamassign'));
         $mform->setDefault('preventlatesubmission', 1);
         $mform->addElement('advcheckbox', 'allowresubmission', get_string('allowresubmission', 'streamassign'));

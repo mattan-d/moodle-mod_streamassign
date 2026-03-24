@@ -30,6 +30,7 @@ $string['messageprovider:submission'] = 'התראות על הגשות במטלת
 $string['messageprovider:gradeupdated'] = 'התראות על עדכון ציון במטלת Stream';
 
 $string['streamassignsettings'] = 'הגדרות הגשת מטלה Stream';
+$string['submissionsettings'] = 'הגדרות הגשה';
 $string['notificationsettings'] = 'התראות';
 $string['preventlatesubmission'] = 'מניעת הגשה מאוחרת';
 $string['allowresubmission'] = 'אפשר הגשה מחדש';

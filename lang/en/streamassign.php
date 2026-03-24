@@ -30,6 +30,7 @@ $string['messageprovider:submission'] = 'Stream assignment submission notificati
 $string['messageprovider:gradeupdated'] = 'Stream assignment grade updated notifications';
 
 $string['streamassignsettings'] = 'Stream assignment settings';
+$string['submissionsettings'] = 'Submission settings';
 $string['notificationsettings'] = 'Notifications';
 $string['preventlatesubmission'] = 'Prevent late submission';
 $string['allowresubmission'] = 'Allow resubmission';
