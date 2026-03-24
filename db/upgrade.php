@@ -32,6 +32,7 @@ defined('MOODLE_INTERNAL') || die();
  */
 function xmldb_streamassign_upgrade($oldversion) {
     global $DB, $CFG;
+    $dbman = $DB->get_manager();
 
     if ($oldversion < 2026032000) {
         require_once($CFG->dirroot . '/mod/streamassign/lib.php');
@@ -43,6 +44,43 @@ function xmldb_streamassign_upgrade($oldversion) {
         }
 
         upgrade_mod_savepoint(true, 2026032000, 'streamassign');
+    }
+
+    if ($oldversion < 2026032001) {
+        $table = new xmldb_table('streamassign');
+
+        $field = new xmldb_field('preventlatesubmission', XMLDB_TYPE_INTEGER, '1', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '1', 'timeclose');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        $field = new xmldb_field('allowresubmission', XMLDB_TYPE_INTEGER, '1', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '1', 'preventlatesubmission');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        $field = new xmldb_field('emailalertstoteachers', XMLDB_TYPE_INTEGER, '1', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '1', 'allowresubmission');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        upgrade_mod_savepoint(true, 2026032001, 'streamassign');
+    }
+
+    if ($oldversion < 2026032002) {
+        $table = new xmldb_table('streamassign');
+
+        $field = new xmldb_field('notifygraderslatesubmission', XMLDB_TYPE_INTEGER, '1', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '1', 'emailalertstoteachers');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        $field = new xmldb_field('notifystudentdefault', XMLDB_TYPE_INTEGER, '1', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '0', 'notifygraderslatesubmission');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        upgrade_mod_savepoint(true, 2026032002, 'streamassign');
     }
 
     return true;

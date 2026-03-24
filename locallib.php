@@ -29,10 +29,24 @@ require_once(__DIR__ . '/classes/stream_uploader.php');
  * @param stdClass $cm Course module record.
  * @param stdClass $student User record of submitter.
  * @param string $videotitle Submitted video title.
+ * @param bool $islate Whether this is a late submission.
  * @return void
  */
-function streamassign_notify_graders_submission(\stdClass $streamassign, \stdClass $cm, \stdClass $student, string $videotitle): void {
+function streamassign_notify_graders_submission(
+    \stdClass $streamassign,
+    \stdClass $cm,
+    \stdClass $student,
+    string $videotitle,
+    bool $islate = false
+): void {
     global $DB;
+
+    if (empty($streamassign->emailalertstoteachers)) {
+        return;
+    }
+    if ($islate && empty($streamassign->notifygraderslatesubmission)) {
+        return;
+    }
 
     $context = \context_module::instance((int) $cm->id);
     $course = $DB->get_record('course', ['id' => $streamassign->course], 'id,fullname', MUST_EXIST);
@@ -55,7 +69,14 @@ function streamassign_notify_graders_submission(\stdClass $streamassign, \stdCla
         'student' => $studentname,
         'activity' => $activityname,
     ]);
-    $messagebody = get_string('notificationnewsubmissionbody', 'streamassign', (object) [
+    if ($islate) {
+        $smallmessage = get_string('notificationlatesubmission', 'streamassign', (object) [
+            'student' => $studentname,
+            'activity' => $activityname,
+        ]);
+    }
+    $bodystring = $islate ? 'notificationlatesubmissionbody' : 'notificationnewsubmissionbody';
+    $messagebody = get_string($bodystring, 'streamassign', (object) [
         'student' => $studentname,
         'activity' => $activityname,
         'course' => format_string($course->fullname, true, ['context' => \context_course::instance($course->id)]),
@@ -167,7 +188,8 @@ function streamassign_handle_upload($context, $streamassign, $cm, $draftid, $vid
         ]);
     }
 
-    streamassign_notify_graders_submission($streamassign, $cm, $USER, $title);
+    $islate = ($streamassign->timeclose > 0 && $now > (int) $streamassign->timeclose);
+    streamassign_notify_graders_submission($streamassign, $cm, $USER, $title, $islate);
     $result->success = true;
     return $result;
 }
@@ -214,9 +236,51 @@ function streamassign_handle_existing_video($streamassign, $cm, $streamid, $vide
         ]);
     }
 
-    streamassign_notify_graders_submission($streamassign, $cm, $USER, $title);
+    $islate = ($streamassign->timeclose > 0 && $now > (int) $streamassign->timeclose);
+    streamassign_notify_graders_submission($streamassign, $cm, $USER, $title, $islate);
     $result->success = true;
     return $result;
+}
+
+/**
+ * Notify a student that grade/feedback was updated.
+ *
+ * @param stdClass $streamassign Activity record.
+ * @param stdClass $cm Course module record.
+ * @param stdClass $student Student user record.
+ * @return void
+ */
+function streamassign_notify_student_grade_updated(\stdClass $streamassign, \stdClass $cm, \stdClass $student): void {
+    global $DB;
+
+    $course = $DB->get_record('course', ['id' => $streamassign->course], 'id,fullname', MUST_EXIST);
+    $context = \context_module::instance((int) $cm->id);
+    $activityname = format_string($streamassign->name, true, ['context' => $context]);
+    $coursename = format_string($course->fullname, true, ['context' => \context_course::instance($course->id)]);
+    $subject = get_string('messageprovider:gradeupdated', 'streamassign') . ': ' . $activityname;
+    $smallmessage = get_string('notificationgradeupdated', 'streamassign', (object) [
+        'activity' => $activityname,
+    ]);
+    $messagebody = get_string('notificationgradeupdatedbody', 'streamassign', (object) [
+        'course' => $coursename,
+        'activity' => $activityname,
+    ]);
+    $url = new \moodle_url('/mod/streamassign/view.php', ['id' => $cm->id]);
+
+    $eventdata = new \core\message\message();
+    $eventdata->component = 'mod_streamassign';
+    $eventdata->name = 'gradeupdated';
+    $eventdata->userfrom = \core_user::get_noreply_user();
+    $eventdata->userto = $student;
+    $eventdata->subject = $subject;
+    $eventdata->fullmessage = $messagebody;
+    $eventdata->fullmessageformat = FORMAT_PLAIN;
+    $eventdata->fullmessagehtml = '';
+    $eventdata->smallmessage = $smallmessage;
+    $eventdata->contexturl = $url->out(false);
+    $eventdata->contexturlname = $activityname;
+    $eventdata->courseid = (int) $streamassign->course;
+    message_send($eventdata);
 }
 
 /**

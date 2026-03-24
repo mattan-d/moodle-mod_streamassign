@@ -40,6 +40,17 @@ class mod_streamassign_mod_form extends moodleform_mod {
         $mform->addElement('header', 'timing', get_string('timing', 'form'));
         $mform->addElement('date_time_selector', 'timeopen', get_string('allowsubmissionsfromdate', 'assign'), ['optional' => true]);
         $mform->addElement('date_time_selector', 'timeclose', get_string('duedate', 'assign'), ['optional' => true]);
+        $mform->addElement('advcheckbox', 'preventlatesubmission', get_string('preventlatesubmission', 'streamassign'));
+        $mform->setDefault('preventlatesubmission', 1);
+        $mform->addElement('advcheckbox', 'allowresubmission', get_string('allowresubmission', 'streamassign'));
+        $mform->setDefault('allowresubmission', 1);
+        $mform->addElement('header', 'notificationsettings', get_string('notificationsettings', 'streamassign'));
+        $mform->addElement('advcheckbox', 'emailalertstoteachers', get_string('notifygraderssubmission', 'streamassign'));
+        $mform->setDefault('emailalertstoteachers', 1);
+        $mform->addElement('advcheckbox', 'notifygraderslatesubmission', get_string('notifygraderslatesubmission', 'streamassign'));
+        $mform->setDefault('notifygraderslatesubmission', 1);
+        $mform->addElement('advcheckbox', 'notifystudentdefault', get_string('notifystudentdefault', 'streamassign'));
+        $mform->setDefault('notifystudentdefault', 0);
 
         $this->standard_grading_coursemodule_elements();
         $this->standard_coursemodule_elements();

@@ -64,9 +64,16 @@ if ($streamassign->timeopen > 0 && $timenow < $streamassign->timeopen) {
     echo json_encode(['success' => false, 'message' => get_string('activitynotavailableyet', 'streamassign', userdate($streamassign->timeopen))]);
     exit;
 }
-if ($streamassign->timeclose > 0 && $timenow > $streamassign->timeclose) {
+if (!empty($streamassign->preventlatesubmission) && $streamassign->timeclose > 0 && $timenow > $streamassign->timeclose) {
     echo json_encode(['success' => false, 'message' => get_string('activityclosed', 'streamassign', userdate($streamassign->timeclose))]);
     exit;
+}
+if (empty($streamassign->allowresubmission)) {
+    $existing = $DB->record_exists('streamassign_submission', ['streamassignid' => $streamassign->id, 'userid' => $USER->id]);
+    if ($existing) {
+        echo json_encode(['success' => false, 'message' => get_string('resubmissionnotallowed', 'streamassign')]);
+        exit;
+    }
 }
 
 if (!isset($_FILES['chunk']) || !is_uploaded_file($_FILES['chunk']['tmp_name'])) {

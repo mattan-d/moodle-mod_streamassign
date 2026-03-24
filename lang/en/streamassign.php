@@ -27,8 +27,17 @@ $string['streamassign:submit'] = 'Submit video to Stream assignment';
 $string['streamassign:addinstance'] = 'Add a new Stream assignment';
 $string['streamassign:grade'] = 'Grade Stream assignment';
 $string['messageprovider:submission'] = 'Stream assignment submission notifications';
+$string['messageprovider:gradeupdated'] = 'Stream assignment grade updated notifications';
 
 $string['streamassignsettings'] = 'Stream assignment settings';
+$string['notificationsettings'] = 'Notifications';
+$string['preventlatesubmission'] = 'Prevent late submission';
+$string['allowresubmission'] = 'Allow resubmission';
+$string['emailalertstoteachers'] = 'Email alerts to teachers';
+$string['notifygraderssubmission'] = 'Notify graders about submission';
+$string['notifygraderslatesubmission'] = 'Notify graders about late submission';
+$string['notifystudentdefault'] = "Default for 'Notify student'";
+$string['notifystudent'] = 'Notify student';
 $string['streamurl_required'] = 'Stream URL and API key must be configured in the local_stream plugin (Site administration → Plugins → Local plugins → Stream).';
 $string['submitvideo'] = 'Submit video';
 $string['submission'] = 'Submission';
@@ -47,6 +56,7 @@ $string['allowedformats'] = 'Allowed formats: MP4, WebM, MKV, AVI, MOV, and othe
 $string['uploadsuccess'] = 'Video uploaded successfully to Stream.';
 $string['readytoupload'] = 'Click "Submit video" to upload this file.';
 $string['uploaderror'] = 'Upload failed';
+$string['resubmissionnotallowed'] = 'Resubmission is not allowed for this activity.';
 $string['activitynotavailableyet'] = 'This activity is not available until {$a}.';
 $string['activityclosed'] = 'This activity closed on {$a}.';
 $string['nostreamassignments'] = 'No Stream assignments';
@@ -117,3 +127,13 @@ $string['notificationnewsubmissionbody'] = 'A new video assignment was submitted
     . 'Course: {$a->course}' . "\n"
     . 'Activity: {$a->activity}' . "\n"
     . 'Video title: {$a->videotitle}';
+$string['notificationlatesubmission'] = '{$a->student} submitted a late video in {$a->activity}.';
+$string['notificationlatesubmissionbody'] = 'A new late video assignment was submitted.' . "\n"
+    . 'Student: {$a->student}' . "\n"
+    . 'Course: {$a->course}' . "\n"
+    . 'Activity: {$a->activity}' . "\n"
+    . 'Video title: {$a->videotitle}';
+$string['notificationgradeupdated'] = 'Your grade/feedback was updated in {$a->activity}.';
+$string['notificationgradeupdatedbody'] = 'Your grade or feedback has been updated.' . "\n"
+    . 'Course: {$a->course}' . "\n"
+    . 'Activity: {$a->activity}';

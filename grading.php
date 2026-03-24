@@ -88,6 +88,7 @@ if ($isscalegrade) {
 if (data_submitted() && confirm_sesskey()) {
     $grades = optional_param_array('grade', [], PARAM_RAW);
     $feedbacks = optional_param_array('feedback', [], PARAM_TEXT);
+    $notifystudent = optional_param('notifystudent', 0, PARAM_BOOL);
     // Only update users that appear in the form (current page); keys are user ids.
     $useridsonsubmit = array_unique(array_merge(array_keys($grades), array_keys($feedbacks)));
     $allsubmissions = streamassign_get_submissions_for_grading((int) $streamassign->id, (int) $course->id);
@@ -120,6 +121,9 @@ if (data_submitted() && confirm_sesskey()) {
         }
         $feedback = isset($feedbacks[$userid]) ? trim($feedbacks[$userid]) : null;
         streamassign_update_grades($streamassign, $userid, $grade, $feedback);
+        if ($notifystudent) {
+            streamassign_notify_student_grade_updated($streamassign, $cm, $allsubmissions[$userid]->user);
+        }
         $updated++;
     }
     if ($updated > 0) {
@@ -293,11 +297,25 @@ foreach ($submissions as $row) {
 echo html_writer::table($table);
 
 if ($showform) {
+    $notifyattrs = [
+        'type' => 'checkbox',
+        'name' => 'notifystudent',
+        'value' => 1,
+        'id' => 'id_notifystudent',
+    ];
+    if (!empty($streamassign->notifystudentdefault)) {
+        $notifyattrs['checked'] = 'checked';
+    }
     echo html_writer::tag('div', html_writer::empty_tag('input', [
         'type' => 'submit',
         'value' => get_string('savegrades', 'streamassign'),
         'class' => 'btn btn-primary',
     ]), ['class' => 'streamassign-grading-submit']);
+    echo html_writer::tag('div',
+        html_writer::empty_tag('input', $notifyattrs) . ' ' .
+        html_writer::tag('label', get_string('notifystudent', 'streamassign'), ['for' => 'id_notifystudent']),
+        ['class' => 'streamassign-grading-notify-student mt-2']
+    );
     echo html_writer::end_tag('form');
 }
 

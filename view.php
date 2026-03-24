@@ -50,10 +50,13 @@ $PAGE->set_heading(format_string($course->fullname));
 $timenow = time();
 $canedit = has_capability('mod/streamassign:addinstance', $context);
 $opens = $streamassign->timeopen > 0 && $timenow < $streamassign->timeopen;
-$closed = $streamassign->timeclose > 0 && $timenow > $streamassign->timeclose;
+$closed = !empty($streamassign->preventlatesubmission) && $streamassign->timeclose > 0 && $timenow > $streamassign->timeclose;
 $cansubmit = has_capability('mod/streamassign:submit', $context) && !$opens && !$closed;
 
 $submission = streamassign_get_submission((int) $streamassign->id, (int) $USER->id);
+if ($submission && empty($streamassign->allowresubmission)) {
+    $cansubmit = false;
+}
 $streamurl = \mod_streamassign\stream_uploader::get_stream_base_url();
 $streamconfigured = \mod_streamassign\stream_uploader::is_configured();
 

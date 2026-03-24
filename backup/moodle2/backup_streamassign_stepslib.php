@@ -40,7 +40,8 @@ class backup_streamassign_activity_structure_step extends backup_activity_struct
 
         $streamassign = new backup_nested_element('streamassign', ['id'], [
             'course', 'name', 'intro', 'introformat',
-            'timeopen', 'timeclose', 'grade',
+            'timeopen', 'timeclose', 'preventlatesubmission', 'allowresubmission',
+            'emailalertstoteachers', 'notifygraderslatesubmission', 'notifystudentdefault', 'grade',
             'timecreated', 'timemodified',
         ]);
 
