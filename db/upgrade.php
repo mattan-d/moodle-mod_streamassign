@@ -64,8 +64,6 @@ function xmldb_streamassign_upgrade($oldversion) {
             $dbman->add_field($table, $field);
         }
 
-        $table = new xmldb_table('streamassign');
-
         $field = new xmldb_field('notifygraderslatesubmission', XMLDB_TYPE_INTEGER, '1', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '1', 'emailalertstoteachers');
         if (!$dbman->field_exists($table, $field)) {
             $dbman->add_field($table, $field);
