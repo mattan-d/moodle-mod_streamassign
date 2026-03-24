@@ -46,7 +46,7 @@ function xmldb_streamassign_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026032000, 'streamassign');
     }
 
-    if ($oldversion < 2026032001) {
+    if ($oldversion < 2026032400) {
         $table = new xmldb_table('streamassign');
 
         $field = new xmldb_field('preventlatesubmission', XMLDB_TYPE_INTEGER, '1', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '1', 'timeclose');
@@ -64,10 +64,6 @@ function xmldb_streamassign_upgrade($oldversion) {
             $dbman->add_field($table, $field);
         }
 
-        upgrade_mod_savepoint(true, 2026032001, 'streamassign');
-    }
-
-    if ($oldversion < 2026032002) {
         $table = new xmldb_table('streamassign');
 
         $field = new xmldb_field('notifygraderslatesubmission', XMLDB_TYPE_INTEGER, '1', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '1', 'emailalertstoteachers');
@@ -80,7 +76,7 @@ function xmldb_streamassign_upgrade($oldversion) {
             $dbman->add_field($table, $field);
         }
 
-        upgrade_mod_savepoint(true, 2026032002, 'streamassign');
+        upgrade_mod_savepoint(true, 2026032400, 'streamassign');
     }
 
     return true;
