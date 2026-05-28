@@ -127,7 +127,8 @@ function streamassign_get_submissions_for_grading(int $streamassignid, int $cour
         return [];
     }
     $userids = array_unique(array_column($submissions, 'userid'));
-    $users = $DB->get_records_list('user', 'id', $userids, '', 'id, firstname, lastname, email');
+    $userfields = implode(',', \core_user\fields::for_userpic()->get_required_fields());
+    $users = $DB->get_records_list('user', 'id', $userids, '', $userfields);
     $gradinginfo = grade_get_grades($courseid, 'mod', 'streamassign', $streamassignid, $userids);
     $gradesbyuser = [];
     if (!empty($gradinginfo->items) && isset($gradinginfo->items[0]->grades)) {
