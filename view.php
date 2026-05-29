@@ -54,7 +54,12 @@ $closed = !empty($streamassign->preventlatesubmission) && $streamassign->timeclo
 $cansubmit = has_capability('mod/streamassign:submit', $context) && !$opens && !$closed;
 
 $submission = streamassign_get_submission((int) $streamassign->id, (int) $USER->id);
-if ($submission && empty($streamassign->allowresubmission)) {
+$videoprocessing = false;
+if ($submission) {
+    $videoprocessing = \mod_streamassign\stream_uploader::get_video_thumbnail_url((int) $submission->streamid) === null;
+}
+// While the video is still processing, allow replacing it even if resubmission is normally disabled.
+if ($submission && empty($streamassign->allowresubmission) && !$videoprocessing) {
     $cansubmit = false;
 }
 $streamurl = \mod_streamassign\stream_uploader::get_stream_base_url();
@@ -166,7 +171,7 @@ if (!$streamconfigured) {
 
 if ($submission) {
     echo $OUTPUT->heading(get_string('yoursubmission', 'streamassign'), 3);
-    $hasthumb = \mod_streamassign\stream_uploader::get_video_thumbnail_url((int) $submission->streamid) !== null;
+    $hasthumb = !$videoprocessing;
     $embedurl = $hasthumb ? \mod_streamassign\stream_uploader::get_embed_url_with_jwt((int) $submission->streamid, $USER, 7200) : null;
     $watchurl = $streamurl ? $streamurl . '/watch/' . $submission->streamid : '';
     $submissioninfo = [
@@ -191,7 +196,7 @@ if ($submission) {
         $submissioninfo['watchurl'] = $watchurl;
         $submissioninfo['watchlabel'] = get_string('watchvideo', 'streamassign');
     }
-    if (!$hasthumb && $cansubmit) {
+    if ($videoprocessing && $cansubmit && $streamconfigured) {
         $submissioninfo['showresubmit'] = true;
         $submissioninfo['resubmitlabel'] = get_string('resubmitvideo', 'streamassign');
         $submissioninfo['resubmiturl'] = '#streamassign-resubmit-form';

@@ -69,10 +69,13 @@ if (!empty($streamassign->preventlatesubmission) && $streamassign->timeclose > 0
     exit;
 }
 if (empty($streamassign->allowresubmission)) {
-    $existing = $DB->record_exists('streamassign_submission', ['streamassignid' => $streamassign->id, 'userid' => $USER->id]);
+    $existing = $DB->get_record('streamassign_submission', ['streamassignid' => $streamassign->id, 'userid' => $USER->id]);
     if ($existing) {
-        echo json_encode(['success' => false, 'message' => get_string('resubmissionnotallowed', 'streamassign')]);
-        exit;
+        $stillprocessing = \mod_streamassign\stream_uploader::get_video_thumbnail_url((int) $existing->streamid) === null;
+        if (!$stillprocessing) {
+            echo json_encode(['success' => false, 'message' => get_string('resubmissionnotallowed', 'streamassign')]);
+            exit;
+        }
     }
 }
 

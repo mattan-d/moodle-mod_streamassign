@@ -40,6 +40,21 @@
     {{#checkurl}}
     <div id="streamassign-embed-placeholder" class="streamassign-embed-wrapper" data-check-url="{{checkurl}}" data-interval="{{nextcheckseconds}}" style="max-width: 100%; margin: 1rem 0;">
         <p class="streamassign-video-processing alert alert-info">{{processingmessage}}</p>
+        {{#showresubmit}}
+        <p class="streamassign-action-buttons mt-2">
+            {{#watchurl}}
+            <a href="{{watchurl}}" class="btn btn-secondary" target="_blank" rel="noopener">{{watchlabel}}</a>
+            {{/watchurl}}
+            <a href="{{resubmiturl}}" class="btn btn-primary{{#watchurl}} ms-2{{/watchurl}}">{{resubmitlabel}}</a>
+        </p>
+        {{/showresubmit}}
+        {{^showresubmit}}
+        {{#watchurl}}
+        <p class="streamassign-action-buttons mt-2">
+            <a href="{{watchurl}}" class="btn btn-secondary" target="_blank" rel="noopener">{{watchlabel}}</a>
+        </p>
+        {{/watchurl}}
+        {{/showresubmit}}
     </div>
     <script>
     (function() {
@@ -69,10 +84,11 @@
     </script>
     {{/checkurl}}
     {{/videoready}}
+    {{#videoready}}
     {{#watchurl}}
     <p class="streamassign-action-buttons">
-        <a href="{{watchurl}}" class="btn btn-secondary" target="_blank" rel="noopener">{{watchlabel}}</a>{{#showresubmit}}
-        <a href="{{resubmiturl}}" class="btn btn-primary ms-2">{{resubmitlabel}}</a>{{/showresubmit}}
+        <a href="{{watchurl}}" class="btn btn-secondary" target="_blank" rel="noopener">{{watchlabel}}</a>
     </p>
     {{/watchurl}}
+    {{/videoready}}
 </div>
