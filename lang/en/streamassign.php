@@ -46,6 +46,7 @@ $string['nosubmission'] = 'No submission yet';
 $string['yoursubmission'] = 'Your submission';
 $string['submittedon'] = 'Submitted on';
 $string['watchvideo'] = 'Watch video';
+$string['resubmitvideo'] = 'Resubmit';
 $string['uploadvideo'] = 'Upload video';
 $string['uploadzonetext'] = 'You can drag and drop files here to add them.';
 $string['uploadzonehint'] = 'Maximum file size: 2GB. Accepted formats: MP4, WebM, MOV, AVI, and other common video formats.';

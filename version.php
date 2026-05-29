@@ -24,11 +24,11 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version   = 2026032400;
+$plugin->version   = 2026052900;
 $plugin->requires  = 2017111300;
 $plugin->component = 'mod_streamassign';
 $plugin->maturity  = MATURITY_STABLE;
-$plugin->release   = '1.7';
+$plugin->release   = '1.8';
 
 // local_stream is required (provides Stream URL and API key).
 $plugin->dependencies = [

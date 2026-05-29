@@ -46,6 +46,7 @@ $string['nosubmission'] = 'טרם הוגש';
 $string['yoursubmission'] = 'ההגשה שלך';
 $string['submittedon'] = 'הוגש בתאריך';
 $string['watchvideo'] = 'צפייה בוידאו';
+$string['resubmitvideo'] = 'הגשה מחדש';
 $string['uploadvideo'] = 'העלאת וידאו';
 $string['uploadzonetext'] = 'ניתן לגרור ולהשליך קבצים לכאן.';
 $string['uploadzonehint'] = 'גודל קובץ מקסימלי: 2GB. פורמטים: MP4, WebM, MOV, AVI ועוד.';

@@ -191,16 +191,23 @@ if ($submission) {
         $submissioninfo['watchurl'] = $watchurl;
         $submissioninfo['watchlabel'] = get_string('watchvideo', 'streamassign');
     }
+    if (!$hasthumb && $cansubmit) {
+        $submissioninfo['showresubmit'] = true;
+        $submissioninfo['resubmitlabel'] = get_string('resubmitvideo', 'streamassign');
+        $submissioninfo['resubmiturl'] = '#streamassign-resubmit-form';
+    }
     echo $OUTPUT->render_from_template('mod_streamassign/submission_info', $submissioninfo);
 }
 
 if ($cansubmit && $streamconfigured && $submissionform) {
+    echo html_writer::start_div('', ['id' => 'streamassign-resubmit-form']);
     if (!$submission) {
         echo $OUTPUT->heading(get_string('submitvideo', 'streamassign'), 3);
     } else if (!$canedit) {
         echo $OUTPUT->notification(get_string('allowedformats', 'streamassign'), 'notifyinfo');
     }
     $submissionform->display();
+    echo html_writer::end_div();
 }
 
 echo $OUTPUT->footer();

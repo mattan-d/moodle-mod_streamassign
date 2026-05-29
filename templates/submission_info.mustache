@@ -70,6 +70,9 @@
     {{/checkurl}}
     {{/videoready}}
     {{#watchurl}}
-    <p><a href="{{watchurl}}" class="btn btn-secondary" target="_blank" rel="noopener">{{watchlabel}}</a></p>
+    <p class="streamassign-action-buttons">
+        <a href="{{watchurl}}" class="btn btn-secondary" target="_blank" rel="noopener">{{watchlabel}}</a>{{#showresubmit}}
+        <a href="{{resubmiturl}}" class="btn btn-primary ms-2">{{resubmitlabel}}</a>{{/showresubmit}}
+    </p>
     {{/watchurl}}
 </div>
