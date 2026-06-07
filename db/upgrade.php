@@ -205,26 +205,62 @@ function xmldb_streamassign_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026052900, 'streamassign');
     }
 
-    if ($oldversion < 2026060701) {
+    if ($oldversion < 2026060702) {
         require_once($CFG->dirroot . '/mod/streamassign/lib.php');
+
+        $table = new xmldb_table('streamassign');
+
+        // Ensure schema exists (production may have skipped intermediate version steps).
+        $field = new xmldb_field('maxvideos', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '1', 'allowresubmission');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        $field = new xmldb_field('maxbytes', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '2147483648', 'maxvideos');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        $field = new xmldb_field('filetypeslist', XMLDB_TYPE_TEXT, null, null, null, null, null, 'maxbytes');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        $field = new xmldb_field('teamsubmission', XMLDB_TYPE_INTEGER, '1', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '0', 'filetypeslist');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        $field = new xmldb_field('teamsubmissiongroupingid', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '0', 'teamsubmission');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        $field = new xmldb_field('preventsubmissionnotingroup', XMLDB_TYPE_INTEGER, '1', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '0', 'teamsubmissiongroupingid');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
 
         $sitefiletypes = get_config('mod_streamassign', 'filetypes');
         if ($sitefiletypes !== false && $sitefiletypes !== '') {
             set_config('filetypes', streamassign_sanitize_filetypes_string((string) $sitefiletypes), 'mod_streamassign');
         }
 
-        $instances = $DB->get_records('streamassign', null, '', 'id, filetypeslist');
-        foreach ($instances as $instance) {
-            if (empty($instance->filetypeslist)) {
-                continue;
-            }
-            $clean = streamassign_sanitize_filetypes_string((string) $instance->filetypeslist);
-            if ($clean !== $instance->filetypeslist) {
-                $DB->set_field('streamassign', 'filetypeslist', $clean, ['id' => $instance->id]);
+        $filetypesfield = new xmldb_field('filetypeslist', XMLDB_TYPE_TEXT, null, null, null, null, null, 'maxbytes');
+        if ($dbman->field_exists($table, $filetypesfield)) {
+            $instances = $DB->get_records('streamassign', null, '', 'id, filetypeslist');
+            foreach ($instances as $instance) {
+                if (empty($instance->filetypeslist)) {
+                    continue;
+                }
+                $clean = streamassign_sanitize_filetypes_string((string) $instance->filetypeslist);
+                if ($clean !== $instance->filetypeslist) {
+                    $DB->set_field('streamassign', 'filetypeslist', $clean, ['id' => $instance->id]);
+                }
             }
         }
 
-        upgrade_mod_savepoint(true, 2026060701, 'streamassign');
+        upgrade_mod_savepoint(true, 2026060702, 'streamassign');
     }
 
     return true;
