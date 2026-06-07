@@ -20,6 +20,56 @@
 defined('MOODLE_INTERNAL') || die();
 
 /**
+ * Whether the submission table has team-submission columns (post-upgrade schema).
+ *
+ * @return bool
+ */
+function streamassign_has_submission_groupid(): bool {
+    global $DB;
+    static $has = null;
+    if ($has === null) {
+        $dbman = $DB->get_manager();
+        $table = new xmldb_table('streamassign_submission');
+        $field = new xmldb_field('groupid', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '0', 'streamassignid');
+        $has = $dbman->field_exists($table, $field);
+    }
+    return $has;
+}
+
+/**
+ * Whether the overrides table exists.
+ *
+ * @return bool
+ */
+function streamassign_has_overrides_table(): bool {
+    global $DB;
+    static $has = null;
+    if ($has === null) {
+        $dbman = $DB->get_manager();
+        $has = $dbman->table_exists(new xmldb_table('streamassign_overrides'));
+    }
+    return $has;
+}
+
+/**
+ * Query params for an individual user's submissions.
+ *
+ * @param int $streamassignid
+ * @param int $userid
+ * @return array
+ */
+function streamassign_individual_submission_params(int $streamassignid, int $userid): array {
+    $params = [
+        'streamassignid' => $streamassignid,
+        'userid' => $userid,
+    ];
+    if (streamassign_has_submission_groupid()) {
+        $params['groupid'] = 0;
+    }
+    return $params;
+}
+
+/**
  * Supported features.
  *
  * @param string $feature FEATURE_xx constant
@@ -288,7 +338,7 @@ function streamassign_get_maxvideos(\stdClass $streamassign): int {
  * @return bool
  */
 function streamassign_is_team_submission(\stdClass $streamassign): bool {
-    return !empty($streamassign->teamsubmission);
+    return streamassign_has_submission_groupid() && !empty($streamassign->teamsubmission);
 }
 
 /**
@@ -386,11 +436,7 @@ function streamassign_count_submissions(\stdClass $streamassign, int $courseid, 
         }
     }
 
-    return $DB->count_records('streamassign_submission', [
-        'streamassignid' => $streamassign->id,
-        'groupid' => 0,
-        'userid' => $userid,
-    ]);
+    return $DB->count_records('streamassign_submission', streamassign_individual_submission_params((int) $streamassign->id, $userid));
 }
 
 /**
@@ -402,11 +448,7 @@ function streamassign_count_submissions(\stdClass $streamassign, int $courseid, 
  */
 function streamassign_count_user_submissions(int $streamassignid, int $userid): int {
     global $DB;
-    return $DB->count_records('streamassign_submission', [
-        'streamassignid' => $streamassignid,
-        'groupid' => 0,
-        'userid' => $userid,
-    ]);
+    return $DB->count_records('streamassign_submission', streamassign_individual_submission_params($streamassignid, $userid));
 }
 
 /**
@@ -460,11 +502,7 @@ function streamassign_get_user_submissions(int $streamassignid, int $userid, ?\s
         return [];
     }
 
-    return $DB->get_records('streamassign_submission', [
-        'streamassignid' => $streamassignid,
-        'groupid' => 0,
-        'userid' => $userid,
-    ], 'timemodified DESC');
+    return $DB->get_records('streamassign_submission', streamassign_individual_submission_params($streamassignid, $userid), 'timemodified DESC');
 }
 
 /**
@@ -513,7 +551,7 @@ function streamassign_delete_submission(int $submissionid, int $streamassignid):
         return false;
     }
 
-    $groupid = (int) $submission->groupid;
+    $groupid = streamassign_has_submission_groupid() ? (int) ($submission->groupid ?? 0) : 0;
     $userid = (int) $submission->userid;
     $DB->delete_records('streamassign_submission', ['id' => $submissionid]);
 
@@ -685,10 +723,16 @@ function streamassign_get_grading_summary(int $streamassignid, int $courseid, co
               WHERE streamassignid = :streamassignid",
             ['streamassignid' => $streamassignid]
         );
-    } else {
+    } else if (streamassign_has_submission_groupid()) {
         $submittedcount = $DB->count_records_sql(
             "SELECT COUNT(DISTINCT userid) FROM {streamassign_submission}
               WHERE streamassignid = :streamassignid AND groupid = 0",
+            ['streamassignid' => $streamassignid]
+        );
+    } else {
+        $submittedcount = $DB->count_records_sql(
+            "SELECT COUNT(DISTINCT userid) FROM {streamassign_submission}
+              WHERE streamassignid = :streamassignid",
             ['streamassignid' => $streamassignid]
         );
     }
@@ -719,11 +763,14 @@ function streamassign_get_grading_summary(int $streamassignid, int $courseid, co
  */
 function streamassign_get_submission(int $streamassignid, int $userid): ?\stdClass {
     global $DB;
-    $records = $DB->get_records('streamassign_submission', [
-        'streamassignid' => $streamassignid,
-        'groupid' => 0,
-        'userid' => $userid,
-    ], 'timemodified DESC', '*', 0, 1);
+    $records = $DB->get_records(
+        'streamassign_submission',
+        streamassign_individual_submission_params($streamassignid, $userid),
+        'timemodified DESC',
+        '*',
+        0,
+        1
+    );
     return $records ? reset($records) : null;
 }
 

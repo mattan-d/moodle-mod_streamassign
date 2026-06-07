@@ -35,6 +35,10 @@ defined('MOODLE_INTERNAL') || die();
 function streamassign_override_exists(int $streamassignid, int $courseid, int $userid): stdClass {
     global $DB;
 
+    if (!streamassign_has_overrides_table()) {
+        return (object) ['timeopen' => null, 'timeclose' => null];
+    }
+
     $getuseroverride = function(int $uid) use ($DB, $streamassignid): array {
         $useroverride = $DB->get_record('streamassign_overrides', [
             'streamassignid' => $streamassignid,
