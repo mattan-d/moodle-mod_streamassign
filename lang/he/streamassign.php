@@ -55,6 +55,7 @@ $string['nosubmission'] = 'טרם הוגש';
 $string['yoursubmission'] = 'ההגשה שלך';
 $string['submittedon'] = 'הוגש בתאריך';
 $string['watchvideo'] = 'צפייה בוידאו';
+$string['resubmitvideo'] = 'הגשה מחדש';
 $string['uploadvideo'] = 'העלאת וידאו';
 $string['uploadzonetext'] = 'ניתן לגרור ולהשליך קבצים לכאן.';
 $string['uploadzonehint'] = 'גודל קובץ מקסימלי: {$a}. פורמטים: MP4, WebM, MOV, AVI, MP3, WAV, M4A, AAC, OGG ועוד.';
@@ -122,6 +123,7 @@ $string['submittedbyyou'] = 'הוגש על ידך';
 $string['yoursubmissiongroup'] = 'את/ה מגיש/ה כחבר/ת בקבוצה: {$a}';
 $string['groupsubmissions'] = 'הגשות קבוצה: {$a}';
 $string['groupmemberslist'] = 'חברים: {$a}';
+$string['notingroup'] = 'אינך חבר/ה בקבוצה, או שאת/ה חבר/ה ביותר מקבוצה אחת. לא ניתן להגיש עד שתהיה/י חבר/ה בקבוצה אחת בלבד למטלה זו.';
 
 // Submission summary (view page, for graders)
 $string['submissionsummary'] = 'סיכום הגשות';

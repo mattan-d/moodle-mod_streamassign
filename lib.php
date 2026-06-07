@@ -313,7 +313,7 @@ function streamassign_get_submission_target(\stdClass $streamassign, int $course
 
     $group = streamassign_get_submission_group($streamassign, $courseid, $userid);
     if (!empty($streamassign->preventsubmissionnotingroup) && !$group) {
-        return (object) ['error' => get_string('notingroup', 'assign')];
+        return (object) ['error' => get_string('notingroup', 'streamassign')];
     }
     if ($group) {
         return (object) [

@@ -55,6 +55,7 @@ $string['nosubmission'] = 'No submission yet';
 $string['yoursubmission'] = 'Your submission';
 $string['submittedon'] = 'Submitted on';
 $string['watchvideo'] = 'Watch video';
+$string['resubmitvideo'] = 'Resubmit';
 $string['uploadvideo'] = 'Upload video';
 $string['uploadzonetext'] = 'You can drag and drop files here to add them.';
 $string['uploadzonehint'] = 'Maximum file size: {$a}. Accepted formats: MP4, WebM, MOV, AVI, MP3, WAV, M4A, AAC, OGG, and other common video/audio formats.';
@@ -122,6 +123,7 @@ $string['submittedbyyou'] = 'Submitted by you';
 $string['yoursubmissiongroup'] = 'You are submitting as a member of group: {$a}';
 $string['groupsubmissions'] = 'Group submissions: {$a}';
 $string['groupmemberslist'] = 'Members: {$a}';
+$string['notingroup'] = 'You are not a member of any group, or you are a member of more than one group. You cannot submit until you belong to exactly one group for this activity.';
 
 // Submission summary (view page, for graders)
 $string['submissionsummary'] = 'Submission summary';

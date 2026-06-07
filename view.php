@@ -60,7 +60,14 @@ $submissiongroup = streamassign_is_team_submission($streamassign)
     ? streamassign_get_submission_group($streamassign, (int) $course->id, (int) $USER->id)
     : null;
 if (!streamassign_user_can_submit($streamassign, (int) $USER->id, (int) $course->id)) {
-    $cansubmit = false;
+    $allowprocessingreplace = false;
+    if (count($usersubmissions) === 1 && streamassign_get_maxvideos($streamassign) <= 1) {
+        $sub = reset($usersubmissions);
+        $allowprocessingreplace = \mod_streamassign\stream_uploader::get_video_thumbnail_url((int) $sub->streamid) === null;
+    }
+    if (!$allowprocessingreplace) {
+        $cansubmit = false;
+    }
 }
 $streamurl = \mod_streamassign\stream_uploader::get_stream_base_url();
 $streamconfigured = \mod_streamassign\stream_uploader::is_configured();
@@ -191,7 +198,7 @@ if (streamassign_is_team_submission($streamassign) && has_capability('mod/stream
     if ($submissiongroup) {
         echo $OUTPUT->notification(get_string('yoursubmissiongroup', 'streamassign', format_string($submissiongroup->name)), 'notifyinfo');
     } else if (!empty($streamassign->preventsubmissionnotingroup)) {
-        echo $OUTPUT->notification(get_string('notingroup', 'assign'), 'notifywarning');
+        echo $OUTPUT->notification(get_string('notingroup', 'streamassign'), 'notifywarning');
     }
 }
 

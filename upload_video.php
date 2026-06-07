@@ -72,14 +72,23 @@ if (!empty($streamassign->preventlatesubmission) && $streamassign->timeclose > 0
     exit;
 }
 if (!streamassign_user_can_submit($streamassign, (int) $USER->id, (int) $course->id)) {
-    $max = streamassign_get_maxvideos($streamassign);
-    $count = streamassign_count_submissions($streamassign, (int) $course->id, (int) $USER->id);
-    if ($count >= $max) {
-        echo json_encode(['success' => false, 'message' => get_string('maxvideosreached', 'streamassign', $max)]);
-    } else {
-        echo json_encode(['success' => false, 'message' => get_string('resubmissionnotallowed', 'streamassign')]);
+    $allowprocessing = false;
+    if (empty($streamassign->allowresubmission)) {
+        $latest = streamassign_get_latest_submission($streamassign, (int) $course->id, (int) $USER->id);
+        if ($latest && \mod_streamassign\stream_uploader::get_video_thumbnail_url((int) $latest->streamid) === null) {
+            $allowprocessing = true;
+        }
     }
-    exit;
+    if (!$allowprocessing) {
+        $max = streamassign_get_maxvideos($streamassign);
+        $count = streamassign_count_submissions($streamassign, (int) $course->id, (int) $USER->id);
+        if ($count >= $max) {
+            echo json_encode(['success' => false, 'message' => get_string('maxvideosreached', 'streamassign', $max)]);
+        } else {
+            echo json_encode(['success' => false, 'message' => get_string('resubmissionnotallowed', 'streamassign')]);
+        }
+        exit;
+    }
 }
 
 if (!isset($_FILES['chunk']) || !is_uploaded_file($_FILES['chunk']['tmp_name'])) {
