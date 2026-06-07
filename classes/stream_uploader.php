@@ -114,7 +114,6 @@ class stream_uploader {
         $map = [
             'mp4' => 'video/mp4',
             'webm' => 'video/webm',
-            'mkv' => 'video/x-matroska',
             'avi' => 'video/x-msvideo',
             'mov' => 'video/quicktime',
             'mpeg' => 'video/mpeg',
@@ -122,7 +121,6 @@ class stream_uploader {
             'flv' => 'video/x-flv',
             'wmv' => 'video/x-ms-wmv',
             'ogv' => 'video/ogg',
-            'vob' => 'video/dvd',
             'mp3' => 'audio/mpeg',
             'wav' => 'audio/wav',
             'm4a' => 'audio/mp4',

@@ -119,20 +119,37 @@ function streamassign_delete_instance($id) {
  * @return string[]
  */
 function streamassign_get_selectable_filetypes(): array {
-    return ['video', 'audio', '.mkv', '.vob'];
+    return ['video', 'audio'];
 }
 
 /**
- * Default allowed file types (video + audio + formats not in Moodle groups).
+ * Default allowed file types (video + audio).
  *
  * @return string
  */
 function streamassign_get_default_filetypes(): string {
     $default = get_config('mod_streamassign', 'filetypes');
     if ($default === false || $default === '') {
-        return 'video,audio,.mkv,.vob';
+        return 'video,audio';
     }
-    return (string) $default;
+    return streamassign_sanitize_filetypes_string((string) $default);
+}
+
+/**
+ * Remove unsupported custom extensions from a filetypes list string.
+ *
+ * @param string $filetypes Comma-separated file type groups/extensions.
+ * @return string
+ */
+function streamassign_sanitize_filetypes_string(string $filetypes): string {
+    $removed = ['.mkv', '.vob', 'mkv', 'vob'];
+    $parts = array_filter(array_map('trim', explode(',', $filetypes)), function(string $part) use ($removed): bool {
+        return $part !== '' && !in_array(strtolower($part), $removed, true);
+    });
+    if (empty($parts)) {
+        return 'video,audio';
+    }
+    return implode(',', $parts);
 }
 
 /**
@@ -142,7 +159,7 @@ function streamassign_get_default_filetypes(): string {
  */
 function streamassign_get_all_extensions(): array {
     return [
-        'mp4', 'flv', 'webm', 'mkv', 'vob', 'ogv', 'ogg', 'avi', 'wmv', 'mov', 'mpeg', 'mpg',
+        'mp4', 'flv', 'webm', 'ogv', 'ogg', 'avi', 'wmv', 'mov', 'mpeg', 'mpg',
         'mp3', 'wav', 'm4a', 'aac',
     ];
 }
@@ -155,7 +172,7 @@ function streamassign_get_all_extensions(): array {
  */
 function streamassign_get_configured_filetypes(\stdClass $streamassign): string {
     if (!empty($streamassign->filetypeslist)) {
-        return (string) $streamassign->filetypeslist;
+        return streamassign_sanitize_filetypes_string((string) $streamassign->filetypeslist);
     }
     return streamassign_get_default_filetypes();
 }

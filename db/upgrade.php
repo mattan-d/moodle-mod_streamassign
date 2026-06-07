@@ -205,5 +205,27 @@ function xmldb_streamassign_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026052900, 'streamassign');
     }
 
+    if ($oldversion < 2026060701) {
+        require_once($CFG->dirroot . '/mod/streamassign/lib.php');
+
+        $sitefiletypes = get_config('mod_streamassign', 'filetypes');
+        if ($sitefiletypes !== false && $sitefiletypes !== '') {
+            set_config('filetypes', streamassign_sanitize_filetypes_string((string) $sitefiletypes), 'mod_streamassign');
+        }
+
+        $instances = $DB->get_records('streamassign', null, '', 'id, filetypeslist');
+        foreach ($instances as $instance) {
+            if (empty($instance->filetypeslist)) {
+                continue;
+            }
+            $clean = streamassign_sanitize_filetypes_string((string) $instance->filetypeslist);
+            if ($clean !== $instance->filetypeslist) {
+                $DB->set_field('streamassign', 'filetypeslist', $clean, ['id' => $instance->id]);
+            }
+        }
+
+        upgrade_mod_savepoint(true, 2026060701, 'streamassign');
+    }
+
     return true;
 }
