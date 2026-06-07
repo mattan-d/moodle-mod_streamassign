@@ -91,21 +91,21 @@ if (data_submitted() && confirm_sesskey()) {
     $notifystudent = optional_param('notifystudent', 0, PARAM_BOOL);
     // Only update users that appear in the form (current page); keys are user ids.
     $useridsonsubmit = array_unique(array_merge(array_keys($grades), array_keys($feedbacks)));
-    $allsubmissions = streamassign_get_submissions_for_grading((int) $streamassign->id, (int) $course->id);
+    $allsubmissions = streamassign_get_submissions_for_grading((int) $streamassign->id, (int) $course->id, $context);
     $updated = 0;
-    foreach ($useridsonsubmit as $userid) {
-        $userid = (int) $userid;
-        if ($userid <= 0 || !isset($allsubmissions[$userid])) {
+    foreach ($useridsonsubmit as $gradekey) {
+        $gradekey = (string) $gradekey;
+        if (!isset($allsubmissions[$gradekey])) {
             continue;
         }
+        $row = $allsubmissions[$gradekey];
         $grade = null;
-        if (isset($grades[$userid])) {
-            $submittedgrade = $grades[$userid];
+        if (isset($grades[$gradekey])) {
+            $submittedgrade = $grades[$gradekey];
             if ($submittedgrade === '' || $submittedgrade === null) {
                 $grade = null;
             } else if ($isnumericgrade) {
                 $grade = (float) $submittedgrade;
-                // Clamp to valid range and remove digits after decimal.
                 if ($grade < 0) {
                     $grade = 0;
                 } else if ($grade > $grademax) {
@@ -119,10 +119,20 @@ if (data_submitted() && confirm_sesskey()) {
                 }
             }
         }
-        $feedback = isset($feedbacks[$userid]) ? trim($feedbacks[$userid]) : null;
-        streamassign_update_grades($streamassign, $userid, $grade, $feedback);
-        if ($notifystudent) {
-            streamassign_notify_student_grade_updated($streamassign, $cm, $allsubmissions[$userid]->user);
+        $feedback = isset($feedbacks[$gradekey]) ? trim($feedbacks[$gradekey]) : null;
+
+        if (!empty($row->isteam) && !empty($row->groupid)) {
+            streamassign_update_group_grades($streamassign, (int) $row->groupid, $context, $grade, $feedback);
+            if ($notifystudent) {
+                foreach ($row->members as $member) {
+                    streamassign_notify_student_grade_updated($streamassign, $cm, $member);
+                }
+            }
+        } else {
+            streamassign_update_grades($streamassign, (int) $row->user->id, $grade, $feedback);
+            if ($notifystudent) {
+                streamassign_notify_student_grade_updated($streamassign, $cm, $row->user);
+            }
         }
         $updated++;
     }
@@ -131,20 +141,36 @@ if (data_submitted() && confirm_sesskey()) {
     }
 }
 
-$submissions = streamassign_get_submissions_for_grading((int) $streamassign->id, (int) $course->id);
+$submissions = streamassign_get_submissions_for_grading((int) $streamassign->id, (int) $course->id, $context);
 
 // Filter by first/last initial (like mod_assign).
 if ($tifirst !== '' || $tilast !== '') {
-    foreach ($submissions as $userid => $row) {
+    foreach ($submissions as $key => $row) {
+        if (!empty($row->isteam)) {
+            $match = false;
+            foreach ($row->members as $member) {
+                $firstchar = core_text::substr(trim($member->firstname ?? ''), 0, 1);
+                $lastchar = core_text::substr(trim($member->lastname ?? ''), 0, 1);
+                if (($tifirst === '' || core_text::strtoupper($firstchar) === $tifirst) &&
+                        ($tilast === '' || core_text::strtoupper($lastchar) === $tilast)) {
+                    $match = true;
+                    break;
+                }
+            }
+            if (!$match) {
+                unset($submissions[$key]);
+            }
+            continue;
+        }
         $u = $row->user;
         $firstchar = core_text::substr(trim($u->firstname ?? ''), 0, 1);
         $lastchar = core_text::substr(trim($u->lastname ?? ''), 0, 1);
         if ($tifirst !== '' && core_text::strtoupper($firstchar) !== $tifirst) {
-            unset($submissions[$userid]);
+            unset($submissions[$key]);
             continue;
         }
         if ($tilast !== '' && core_text::strtoupper($lastchar) !== $tilast) {
-            unset($submissions[$userid]);
+            unset($submissions[$key]);
         }
     }
 }
@@ -223,6 +249,7 @@ $table->head = [
     get_string('submittedon', 'streamassign'),
     get_string('videotitle', 'streamassign'),
     get_string('watchvideo', 'streamassign'),
+    get_string('action'),
 ];
 if ($showgrades) {
     if ($isnumericgrade) {
@@ -236,41 +263,79 @@ $table->attributes['class'] = 'generaltable streamassign-grading-table';
 
 foreach ($submissions as $row) {
     $user = $row->user;
-    $sub = $row->submission;
-    $thumburl = \mod_streamassign\stream_uploader::get_video_thumbnail_url((int) $sub->streamid);
+    $subs = $row->submissions;
+    $gradekey = $row->gradekey;
     $thumbcell = '';
-    if ($thumburl) {
-        $thumbcell = html_writer::empty_tag('img', [
-            'src' => $thumburl,
-            'alt' => s($sub->videotitle ?: get_string('watchvideo', 'streamassign')),
-            'class' => 'streamassign-video-thumb',
-            'width' => 160,
-            'height' => 90,
-        ]);
-    } else {
-        $thumbcell = html_writer::span(get_string('nothumbnail', 'streamassign'), 'streamassign-no-thumb');
-    }
-    $watchlink = '';
-    if ($streamurl) {
-        $embedurl = \mod_streamassign\stream_uploader::get_embed_url_with_jwt((int) $sub->streamid, $user, 7200);
-        if ($embedurl) {
-            $watchlink = html_writer::link($embedurl, get_string('watchvideo', 'streamassign'), ['target' => '_blank', 'rel' => 'noopener']);
-        } else {
-            $watchlink = html_writer::link($streamurl . '/watch/' . $sub->streamid, get_string('watchvideo', 'streamassign'), ['target' => '_blank', 'rel' => 'noopener']);
+    $titlecell = '';
+    $datecell = '';
+    $watchcell = '';
+    $actioncell = '';
+    foreach ($subs as $idx => $sub) {
+        if ($idx > 0) {
+            $thumbcell .= html_writer::empty_tag('br');
+            $titlecell .= html_writer::empty_tag('br');
+            $datecell .= html_writer::empty_tag('br');
+            $watchcell .= html_writer::empty_tag('br');
+            $actioncell .= html_writer::empty_tag('br');
         }
+        $thumburl = \mod_streamassign\stream_uploader::get_video_thumbnail_url((int) $sub->streamid);
+        if ($thumburl) {
+            $thumbcell .= html_writer::empty_tag('img', [
+                'src' => $thumburl,
+                'alt' => s($sub->videotitle ?: get_string('watchvideo', 'streamassign')),
+                'class' => 'streamassign-video-thumb',
+                'width' => 160,
+                'height' => 90,
+            ]);
+        } else {
+            $thumbcell .= html_writer::span(get_string('nothumbnail', 'streamassign'), 'streamassign-no-thumb');
+        }
+        $titlecell .= s($sub->videotitle ?: '-');
+        $datecell .= userdate($sub->timemodified);
+        if ($streamurl) {
+            $embedurl = \mod_streamassign\stream_uploader::get_embed_url_with_jwt((int) $sub->streamid, $user, 7200);
+            if ($embedurl) {
+                $watchcell .= html_writer::link($embedurl, get_string('watchvideo', 'streamassign') . ' #' . ($idx + 1), ['target' => '_blank', 'rel' => 'noopener']);
+            } else {
+                $watchcell .= html_writer::link($streamurl . '/watch/' . $sub->streamid, get_string('watchvideo', 'streamassign') . ' #' . ($idx + 1), ['target' => '_blank', 'rel' => 'noopener']);
+            }
+        }
+        $deleteurl = new moodle_url('/mod/streamassign/deletesubmission.php', [
+            'id' => $sub->id,
+            'cmid' => $cm->id,
+        ]);
+        $actioncell .= html_writer::link($deleteurl,
+            $OUTPUT->pix_icon('t/delete', get_string('deletesubmission', 'streamassign')),
+            ['title' => get_string('deletesubmission', 'streamassign')]);
+    }
+    if (!empty($row->isteam)) {
+        $membernames = [];
+        foreach ($row->members as $member) {
+            $membernames[] = fullname($member);
+        }
+        $namecell = html_writer::tag('strong', s($row->groupname)) .
+            html_writer::empty_tag('br') .
+            html_writer::tag('span', get_string('groupmemberslist', 'streamassign', implode(', ', $membernames)), ['class' => 'text-muted']);
+        if (!empty($row->submitter)) {
+            $namecell .= html_writer::empty_tag('br') .
+                html_writer::tag('span', get_string('submittedby', 'streamassign', fullname($row->submitter)), ['class' => 'text-muted']);
+        }
+    } else {
+        $namecell = $OUTPUT->user_picture($user, ['size' => 35, 'courseid' => $course->id]) . ' ' . fullname($user);
     }
     $tablerow = [
         $thumbcell,
-        $OUTPUT->user_picture($user, ['size' => 35, 'courseid' => $course->id]) . ' ' . fullname($user),
-        userdate($sub->timemodified),
-        s($sub->videotitle ?: '-'),
-        $watchlink,
+        $namecell,
+        $datecell,
+        $titlecell,
+        $watchcell,
+        $actioncell,
     ];
     if ($showgrades) {
         if ($isnumericgrade) {
             $tablerow[] = html_writer::empty_tag('input', [
                 'type' => 'number',
-                'name' => 'grade[' . $user->id . ']',
+                'name' => 'grade[' . $gradekey . ']',
                 'value' => $row->currentgrade !== null ? (string) (int) round($row->currentgrade) : '',
                 'min' => 0,
                 'max' => $grademax,
@@ -279,13 +344,13 @@ foreach ($submissions as $row) {
                 'style' => 'max-width: 6rem;',
             ]);
         } else {
-            $selectname = 'grade[' . $user->id . ']';
+            $selectname = 'grade[' . $gradekey . ']';
             $selectoptions = ['' => ''] + $scaleoptions;
             $selected = ($row->currentgrade !== null && $row->currentgrade !== '') ? (string) (int) round((float) $row->currentgrade) : '';
             $tablerow[] = html_writer::select($selectoptions, $selectname, $selected, false, ['class' => 'custom-select']);
         }
         $tablerow[] = html_writer::tag('textarea', s($row->currentfeedback), [
-            'name' => 'feedback[' . $user->id . ']',
+            'name' => 'feedback[' . $gradekey . ']',
             'rows' => 2,
             'cols' => 40,
             'class' => 'streamassign-feedback-input',

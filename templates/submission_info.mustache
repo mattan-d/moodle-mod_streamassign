@@ -20,6 +20,7 @@
 }}
 <div class="streamassign-submission-info">
     <p>{{submittedon}}</p>
+    {{#submittedby}}<p class="text-muted">{{submittedby}}</p>{{/submittedby}}
     <p>{{videotitle}}</p>
     {{#videoready}}
     {{#embedurl}}
@@ -38,12 +39,12 @@
     {{/videoready}}
     {{^videoready}}
     {{#checkurl}}
-    <div id="streamassign-embed-placeholder" class="streamassign-embed-wrapper" data-check-url="{{checkurl}}" data-interval="{{nextcheckseconds}}" style="max-width: 100%; margin: 1rem 0;">
+    <div id="{{#placeholderid}}{{placeholderid}}{{/placeholderid}}{{^placeholderid}}streamassign-embed-placeholder{{/placeholderid}}" class="streamassign-embed-wrapper" data-check-url="{{checkurl}}" data-interval="{{nextcheckseconds}}" style="max-width: 100%; margin: 1rem 0;">
         <p class="streamassign-video-processing alert alert-info">{{processingmessage}}</p>
     </div>
     <script>
     (function() {
-        var el = document.getElementById('streamassign-embed-placeholder');
+        var el = document.getElementById('{{#placeholderid}}{{placeholderid}}{{/placeholderid}}{{^placeholderid}}streamassign-embed-placeholder{{/placeholderid}}');
         if (!el) return;
         var checkUrl = el.getAttribute('data-check-url');
         var intervalSec = parseInt(el.getAttribute('data-interval'), 10) || 30;

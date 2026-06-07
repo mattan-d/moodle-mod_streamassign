@@ -14,6 +14,12 @@
                 <FIELD NAME="timeclose" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" COMMENT="Due date / close"/>
                 <FIELD NAME="preventlatesubmission" TYPE="int" LENGTH="1" NOTNULL="true" UNSIGNED="true" DEFAULT="1" SEQUENCE="false"/>
                 <FIELD NAME="allowresubmission" TYPE="int" LENGTH="1" NOTNULL="true" UNSIGNED="true" DEFAULT="1" SEQUENCE="false"/>
+                <FIELD NAME="maxvideos" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="1" SEQUENCE="false" COMMENT="Maximum videos per student submission"/>
+                <FIELD NAME="maxbytes" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="2147483648" SEQUENCE="false" COMMENT="Maximum upload file size in bytes"/>
+                <FIELD NAME="filetypeslist" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="Allowed file types (video, audio, extensions)"/>
+                <FIELD NAME="teamsubmission" TYPE="int" LENGTH="1" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" COMMENT="Students submit in groups"/>
+                <FIELD NAME="teamsubmissiongroupingid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" COMMENT="Grouping for team submissions"/>
+                <FIELD NAME="preventsubmissionnotingroup" TYPE="int" LENGTH="1" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" COMMENT="Require membership in exactly one group"/>
                 <FIELD NAME="emailalertstoteachers" TYPE="int" LENGTH="1" NOTNULL="true" UNSIGNED="true" DEFAULT="1" SEQUENCE="false"/>
                 <FIELD NAME="notifygraderslatesubmission" TYPE="int" LENGTH="1" NOTNULL="true" UNSIGNED="true" DEFAULT="1" SEQUENCE="false"/>
                 <FIELD NAME="notifystudentdefault" TYPE="int" LENGTH="1" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false"/>
@@ -32,7 +38,9 @@
             <FIELDS>
                 <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="true"/>
                 <FIELD NAME="streamassignid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="false"/>
-                <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="false"/>
+                <FIELD NAME="groupid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" COMMENT="Group id for team submissions, 0 for individual"/>
+                <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="false" COMMENT="Owner user id for individual submissions, 0 for team"/>
+                <FIELD NAME="submittedby" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" COMMENT="User who submitted on behalf of group or self"/>
                 <FIELD NAME="streamid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="false" COMMENT="Video ID on Stream platform"/>
                 <FIELD NAME="videotitle" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false"/>
                 <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="false"/>
@@ -44,8 +52,27 @@
                 <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
             </KEYS>
             <INDEXES>
-                <INDEX NAME="streamassign_user" UNIQUE="true" FIELDS="streamassignid, userid"/>
+                <INDEX NAME="streamassign_user" UNIQUE="false" FIELDS="streamassignid, userid"/>
+                <INDEX NAME="streamassign_group" UNIQUE="false" FIELDS="streamassignid, groupid"/>
+                <INDEX NAME="streamassign_owner_stream" UNIQUE="true" FIELDS="streamassignid, groupid, userid, streamid"/>
             </INDEXES>
+        </TABLE>
+        <TABLE NAME="streamassign_overrides" COMMENT="User and group overrides for activity dates">
+            <FIELDS>
+                <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="true"/>
+                <FIELD NAME="streamassignid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false"/>
+                <FIELD NAME="groupid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+                <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+                <FIELD NAME="sortorder" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+                <FIELD NAME="timeopen" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+                <FIELD NAME="timeclose" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+            </FIELDS>
+            <KEYS>
+                <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+                <KEY NAME="streamassignid" TYPE="foreign" FIELDS="streamassignid" REFTABLE="streamassign" REFFIELDS="id"/>
+                <KEY NAME="groupid" TYPE="foreign" FIELDS="groupid" REFTABLE="groups" REFFIELDS="id"/>
+                <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+            </KEYS>
         </TABLE>
     </TABLES>
 </XMLDB>

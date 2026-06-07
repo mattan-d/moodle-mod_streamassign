@@ -60,4 +60,12 @@ $capabilities = [
             'manager' => CAP_ALLOW,
         ],
     ],
+    'mod/streamassign:manageoverrides' => [
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_MODULE,
+        'archetypes' => [
+            'editingteacher' => CAP_ALLOW,
+            'manager' => CAP_ALLOW,
+        ],
+    ],
 ];

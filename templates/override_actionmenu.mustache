@@ -1,0 +1,17 @@
+{{!
+    @template mod_streamassign/override_actionmenu
+}}
+<div class="container-fluid tertiary-navigation">
+    <div class="row">
+        {{#urlselect}}
+            <div class="navitem">
+                {{>core/url_select}}
+            </div>
+        {{/urlselect}}
+        {{#addoverride}}
+            <div class="navitem">
+                {{>core/single_button}}
+            </div>
+        {{/addoverride}}
+    </div>
+</div>

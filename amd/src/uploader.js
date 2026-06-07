@@ -14,7 +14,7 @@
 // along with Moodle. If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Chunked video upload (up to 2GB) with drag-and-drop zone.
+ * Chunked video upload with drag-and-drop zone.
  *
  * @module     mod_streamassign/uploader
  * @copyright  2025 CentricApp LTD, Dev Team (dev@centricapp.co)
@@ -27,7 +27,7 @@ define(['core/str'], function(Str) {
     }
 
     var CHUNK_SIZE = 5 * 1024 * 1024; // 5MB
-    var MAX_SIZE = 2 * 1024 * 1024 * 1024; // 2GB
+    var DEFAULT_MAX_SIZE = 2 * 1024 * 1024 * 1024; // 2GB fallback
 
     /**
      * Find hidden input by name (with or without Moodle prefix).
@@ -108,6 +108,19 @@ define(['core/str'], function(Str) {
         }
 
         var uploadUrl = wrapper.getAttribute('data-upload-url') || (window.M && M.cfg && M.cfg.wwwroot ? M.cfg.wwwroot + '/mod/streamassign/upload_video.php' : '/mod/streamassign/upload_video.php');
+        var maxSize = parseInt(wrapper.getAttribute('data-maxbytes'), 10);
+        if (!maxSize || maxSize < 1) {
+            maxSize = DEFAULT_MAX_SIZE;
+        }
+        var maxSizeDisplay = wrapper.getAttribute('data-maxbytes-display') || '';
+        var allowedExtensions = (wrapper.getAttribute('data-allowed-extensions') || '')
+            .split(',')
+            .map(function(ext) {
+                return ext.trim().toLowerCase().replace(/^\./, '');
+            })
+            .filter(function(ext) {
+                return ext.length > 0;
+            });
         var hiddenStreamId = findHidden(form, 'new_upload_stream_id');
         var videotitleInput = form.querySelector('input[type="text"][name*="videotitle"], input[type="text"][id*="videotitle"]');
         var filenameEl = wrapper.querySelector('#streamassign-upload-filename');
@@ -163,12 +176,29 @@ define(['core/str'], function(Str) {
             }
         }
 
+        function isAllowedFile(file) {
+            var name = (file.name || '').toLowerCase();
+            if (allowedExtensions.length > 0) {
+                return allowedExtensions.some(function(ext) {
+                    return name.endsWith('.' + ext);
+                });
+            }
+            return !!(file.type && (file.type.indexOf('video/') === 0 || file.type.indexOf('audio/') === 0));
+        }
+
         function uploadFile(file) {
             if (window.console && console.log) {
                 console.log('mod_streamassign/uploader uploadFile', {name: file && file.name, size: file && file.size});
             }
-            if (file.size > MAX_SIZE) {
-                getStr('uploadtoolarge', 'File exceeds 2GB.', showError);
+            if (file.size > maxSize) {
+                var sizeMsg = maxSizeDisplay || String(maxSize);
+                Str.get_string('uploadtoolarge', 'mod_streamassign', sizeMsg)
+                    .then(function(s) {
+                        showError(s || ('File exceeds ' + sizeMsg + '.'));
+                    })
+                    .catch(function() {
+                        showError('File exceeds ' + sizeMsg + '.');
+                    });
                 return;
             }
 
@@ -269,11 +299,20 @@ define(['core/str'], function(Str) {
                 console.log('mod_streamassign/uploader handleFile', {name: name, type: file.type});
             }
 
-            var lower = name.toLowerCase();
-            var looksVideo = (file.type && file.type.indexOf('video/') === 0) ||
-                lower.match(/\.(mp4|webm|mkv|avi|mov|mpeg|mpg|flv|wmv|ogv|ogg|vob)$/);
-            if (!looksVideo) {
-                getStr('uploaderror', 'Please select a video file.', showError);
+            if (!isAllowedFile(file)) {
+                getStr('uploaderror', 'Please select an allowed file type.', showError);
+                return;
+            }
+
+            if (file.size > maxSize) {
+                var sizeMsg = maxSizeDisplay || String(maxSize);
+                Str.get_string('uploadtoolarge', 'mod_streamassign', sizeMsg)
+                    .then(function(s) {
+                        showError(s || ('File exceeds ' + sizeMsg + '.'));
+                    })
+                    .catch(function() {
+                        showError('File exceeds ' + sizeMsg + '.');
+                    });
                 return;
             }
 

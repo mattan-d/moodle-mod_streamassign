@@ -20,6 +20,9 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+global $CFG;
+
+require_once(__DIR__ . '/lib.php');
 require_once(__DIR__ . '/classes/stream_uploader.php');
 
 if ($ADMIN->fulltree) {
@@ -75,5 +78,35 @@ if ($ADMIN->fulltree) {
         'streamassign/connectioninfo',
         get_string('connectioninfo', 'streamassign'),
         get_string('connectioninfo_desc', 'streamassign')
+    ));
+
+    $settings->add(new admin_setting_configtext(
+        'mod_streamassign/maxvideos',
+        get_string('maxvideosadmin', 'streamassign'),
+        get_string('maxvideosadmin_desc', 'streamassign'),
+        20,
+        PARAM_INT
+    ));
+
+    if (isset($CFG->maxbytes)) {
+        $maxbytes = get_config('mod_streamassign', 'maxbytes');
+        if ($maxbytes === false || $maxbytes === '') {
+            $maxbytes = 2147483648;
+        }
+        $settings->add(new admin_setting_configselect(
+            'mod_streamassign/maxbytes',
+            get_string('maximumsubmissionsize', 'streamassign'),
+            get_string('configmaxbytes', 'streamassign'),
+            $maxbytes,
+            get_max_upload_sizes($CFG->maxbytes, 0, 0, $maxbytes)
+        ));
+    }
+
+    $settings->add(new admin_setting_filetypes(
+        'mod_streamassign/filetypes',
+        get_string('allowedfiletypes', 'streamassign'),
+        get_string('configfiletypes', 'streamassign'),
+        streamassign_get_default_filetypes(),
+        ['onlytypes' => streamassign_get_selectable_filetypes(), 'allowall' => false]
     ));
 }

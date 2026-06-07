@@ -28,6 +28,7 @@ define('AJAX_SCRIPT', true);
 require_once(__DIR__ . '/../../config.php');
 require_once(__DIR__ . '/lib.php');
 require_once(__DIR__ . '/locallib.php');
+require_once(__DIR__ . '/overridelib.php');
 require_once(__DIR__ . '/classes/stream_uploader.php');
 
 global $CFG, $DB, $USER;
@@ -47,7 +48,6 @@ if ($totalchunks < 1 || $chunkindex < 0 || $chunkindex >= $totalchunks) {
     exit;
 }
 
-$maxbytes = 2 * 1024 * 1024 * 1024; // 2GB
 $maxchunkbytes = 5 * 1024 * 1024;    // 5MB per chunk
 
 $cm = get_coursemodule_from_id('streamassign', $id, 0, false, MUST_EXIST);
@@ -59,6 +59,9 @@ require_sesskey($sesskey);
 $context = context_module::instance($cm->id);
 require_capability('mod/streamassign:submit', $context);
 
+$streamassign = streamassign_get_effective_settings($streamassign, (int) $USER->id);
+$maxbytes = streamassign_get_maxbytes($streamassign, $course);
+
 $timenow = time();
 if ($streamassign->timeopen > 0 && $timenow < $streamassign->timeopen) {
     echo json_encode(['success' => false, 'message' => get_string('activitynotavailableyet', 'streamassign', userdate($streamassign->timeopen))]);
@@ -68,12 +71,15 @@ if (!empty($streamassign->preventlatesubmission) && $streamassign->timeclose > 0
     echo json_encode(['success' => false, 'message' => get_string('activityclosed', 'streamassign', userdate($streamassign->timeclose))]);
     exit;
 }
-if (empty($streamassign->allowresubmission)) {
-    $existing = $DB->record_exists('streamassign_submission', ['streamassignid' => $streamassign->id, 'userid' => $USER->id]);
-    if ($existing) {
+if (!streamassign_user_can_submit($streamassign, (int) $USER->id, (int) $course->id)) {
+    $max = streamassign_get_maxvideos($streamassign);
+    $count = streamassign_count_submissions($streamassign, (int) $course->id, (int) $USER->id);
+    if ($count >= $max) {
+        echo json_encode(['success' => false, 'message' => get_string('maxvideosreached', 'streamassign', $max)]);
+    } else {
         echo json_encode(['success' => false, 'message' => get_string('resubmissionnotallowed', 'streamassign')]);
-        exit;
     }
+    exit;
 }
 
 if (!isset($_FILES['chunk']) || !is_uploaded_file($_FILES['chunk']['tmp_name'])) {
@@ -87,10 +93,9 @@ if ($chunksize > $maxchunkbytes) {
     exit;
 }
 
-$ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
-$allowed = ['mp4', 'flv', 'webm', 'mkv', 'vob', 'ogv', 'ogg', 'avi', 'wmv', 'mov', 'mpeg', 'mpg'];
-if (!in_array($ext, $allowed)) {
-    echo json_encode(['success' => false, 'message' => get_string('uploaderror', 'streamassign') . ' ' . get_string('allowedformats', 'streamassign')]);
+if (!streamassign_is_allowed_filename($filename, $streamassign)) {
+    echo json_encode(['success' => false, 'message' => get_string('uploaderror', 'streamassign') . ' '
+        . streamassign_get_allowedformats_description($streamassign)]);
     exit;
 }
 
@@ -150,7 +155,7 @@ for ($i = 0; $i < $totalchunks; $i++) {
     if ($totalsize > $maxbytes) {
         fclose($out);
         @unlink($fullpath);
-        echo json_encode(['success' => false, 'message' => 'File exceeds maximum size (2GB)']);
+        echo json_encode(['success' => false, 'message' => get_string('uploadtoolarge', 'streamassign', display_size($maxbytes))]);
         exit;
     }
     fwrite($out, $data);

@@ -40,27 +40,50 @@ class backup_streamassign_activity_structure_step extends backup_activity_struct
 
         $streamassign = new backup_nested_element('streamassign', ['id'], [
             'course', 'name', 'intro', 'introformat',
-            'timeopen', 'timeclose', 'preventlatesubmission', 'allowresubmission',
+            'timeopen', 'timeclose', 'preventlatesubmission', 'allowresubmission', 'maxvideos', 'maxbytes', 'filetypeslist',
+            'teamsubmission', 'teamsubmissiongroupingid', 'preventsubmissionnotingroup',
             'emailalertstoteachers', 'notifygraderslatesubmission', 'notifystudentdefault', 'grade',
             'timecreated', 'timemodified',
         ]);
 
+        $overrides = new backup_nested_element('overrides');
+        $override = new backup_nested_element('override', ['id'], [
+            'groupid', 'userid', 'sortorder', 'timeopen', 'timeclose',
+        ]);
+
         $submissions = new backup_nested_element('submissions');
         $submission = new backup_nested_element('submission', ['id'], [
-            'userid', 'streamid', 'videotitle',
+            'groupid', 'userid', 'submittedby', 'streamid', 'videotitle',
             'timecreated', 'timemodified',
         ]);
 
+        $streamassign->add_child($overrides);
+        $overrides->add_child($override);
         $streamassign->add_child($submissions);
         $submissions->add_child($submission);
 
         $streamassign->set_source_table('streamassign', ['id' => backup::VAR_ACTIVITYID]);
         $streamassign->annotate_files('mod_streamassign', 'intro', null);
+
+        $overrideparams = ['streamassignid' => backup::VAR_PARENTID];
+        $groupinfo = $this->get_setting_value('groups');
+        if (!$userinfo) {
+            $overrideparams['userid'] = backup_helper::is_sqlparam(null);
+        }
+        if (!$groupinfo) {
+            $overrideparams['groupid'] = backup_helper::is_sqlparam(0);
+        }
+        $override->set_source_table('streamassign_overrides', $overrideparams);
+        $override->annotate_ids('user', 'userid');
+        $override->annotate_ids('group', 'groupid');
+
         if ($userinfo) {
             $submission->set_source_table('streamassign_submission', ['streamassignid' => backup::VAR_PARENTID]);
         }
 
         $submission->annotate_ids('user', 'userid');
+        $submission->annotate_ids('user', 'submittedby');
+        $submission->annotate_ids('group', 'groupid');
 
         return $this->prepare_activity_structure($streamassign);
     }

@@ -104,7 +104,36 @@ class stream_uploader {
     }
 
     /**
-     * Upload a video file to Stream via POST /webservice/api/moodle-upload.
+     * Resolve MIME type for an uploaded media filename.
+     *
+     * @param string $filename
+     * @return string
+     */
+    public static function get_mimetype_for_filename(string $filename): string {
+        $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+        $map = [
+            'mp4' => 'video/mp4',
+            'webm' => 'video/webm',
+            'mkv' => 'video/x-matroska',
+            'avi' => 'video/x-msvideo',
+            'mov' => 'video/quicktime',
+            'mpeg' => 'video/mpeg',
+            'mpg' => 'video/mpeg',
+            'flv' => 'video/x-flv',
+            'wmv' => 'video/x-ms-wmv',
+            'ogv' => 'video/ogg',
+            'vob' => 'video/dvd',
+            'mp3' => 'audio/mpeg',
+            'wav' => 'audio/wav',
+            'm4a' => 'audio/mp4',
+            'aac' => 'audio/aac',
+            'ogg' => 'audio/ogg',
+        ];
+        return $map[$ext] ?? 'application/octet-stream';
+    }
+
+    /**
+     * Upload a media file to Stream via POST /webservice/api/moodle-upload.
      *
      * @param string $filepath Full path to the video file on disk.
      * @param string $filename Original filename (used as title if title not provided).
@@ -136,16 +165,7 @@ class stream_uploader {
             return $result;
         }
 
-        $mimetype = 'video/mp4';
-        if (preg_match('/\.(webm|mkv|avi|mov|mpeg|mpg|flv|wmv|ogv|ogg|vob)$/i', $filename, $m)) {
-            $map = [
-                'webm' => 'video/webm', 'mkv' => 'video/x-matroska', 'avi' => 'video/x-msvideo',
-                'mov' => 'video/quicktime', 'mpeg' => 'video/mpeg', 'mpg' => 'video/mpeg',
-                'flv' => 'video/x-flv', 'wmv' => 'video/x-ms-wmv', 'ogv' => 'video/ogg',
-                'ogg' => 'video/ogg', 'vob' => 'video/dvd',
-            ];
-            $mimetype = $map[strtolower($m[1])] ?? 'video/mp4';
-        }
+        $mimetype = self::get_mimetype_for_filename($filename);
 
         $postdata = [
             'file' => new \CURLFile($filepath, $mimetype, $filename),

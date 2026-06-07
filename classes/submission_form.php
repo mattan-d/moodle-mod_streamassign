@@ -17,7 +17,7 @@ require_once($GLOBALS['CFG']->libdir . '/formslib.php');
 require_once($GLOBALS['CFG']->dirroot . '/repository/lib.php');
 
 /**
- * Submission form: one video file + optional title.
+ * Submission form: upload or pick an existing video (+ optional title).
  *
  * @package    mod_streamassign
  * @copyright  2025 CentricApp LTD, Dev Team (dev@centricapp.co)
@@ -35,9 +35,26 @@ class submission_form extends \moodleform {
         $context = $customdata->context;
         $cmid = $customdata->cmid;
         $uservideos = $customdata->uservideos ?? [];
+        $maxvideos = isset($customdata->maxvideos) ? (int) $customdata->maxvideos : 1;
+        $submissioncount = isset($customdata->submissioncount) ? (int) $customdata->submissioncount : 0;
+        $maxbytes = isset($customdata->maxbytes) ? (int) $customdata->maxbytes : (2 * 1024 * 1024 * 1024);
+        $maxbytesdisplay = isset($customdata->maxbytesdisplay) ? $customdata->maxbytesdisplay : display_size($maxbytes);
+        /** @var \stdClass|null $streamassign */
+        $streamassign = $customdata->streamassign ?? null;
+        $allowedextensions = $customdata->allowedextensions ?? streamassign_get_allowed_extensions($streamassign);
+        $allowedformatsdescription = $customdata->allowedformatsdescription
+            ?? streamassign_get_allowedformats_description($streamassign);
 
         $mform->addElement('hidden', 'id', $cmid);
         $mform->setType('id', PARAM_INT);
+
+        if ($maxvideos > 1) {
+            $mform->addElement('static', 'submissionlimit', get_string('submissionlimit', 'streamassign'),
+                get_string('submissioncount', 'streamassign', (object) [
+                    'count' => $submissioncount,
+                    'max' => $maxvideos,
+                ]));
+        }
 
         $hasexisting = !empty($uservideos);
         if (!$hasexisting) {
@@ -102,18 +119,25 @@ class submission_form extends \moodleform {
         $mform->setType('videotitle', PARAM_TEXT);
         $mform->addHelpButton('videotitle', 'videotitle', 'streamassign');
 
-        // Custom upload drop zone (replaces filemanager to allow uploads up to 2GB via chunked upload).
+        // Custom upload drop zone (chunked upload for large video files).
         $mform->addElement('hidden', 'new_upload_stream_id', 0);
         $mform->setType('new_upload_stream_id', PARAM_INT);
         $uploadurl = isset($customdata->uploadurl) ? $customdata->uploadurl : '';
         $fileinputid = 'streamassign-upload-file-input-' . (int) $cmid;
-        $dropzonehtml = '<div class="streamassign-upload-zone-wrapper" data-cmid="' . (int) $cmid . '" data-sesskey="' . s(sesskey()) . '" data-upload-url="' . s($uploadurl) . '">';
+        $dropzonehtml = '<div class="streamassign-upload-zone-wrapper" data-cmid="' . (int) $cmid . '"'
+            . ' data-sesskey="' . s(sesskey()) . '"'
+            . ' data-upload-url="' . s($uploadurl) . '"'
+            . ' data-maxvideos="' . (int) $maxvideos . '"'
+            . ' data-submissioncount="' . (int) $submissioncount . '"'
+            . ' data-maxbytes="' . (int) $maxbytes . '"'
+            . ' data-maxbytes-display="' . s($maxbytesdisplay) . '"'
+            . ' data-allowed-extensions="' . s(implode(',', $allowedextensions)) . '">';
         $dropzonehtml .= '<label class="streamassign-upload-zone" id="streamassign-upload-zone" for="' . $fileinputid . '" role="button" tabindex="0" aria-label="' . s(get_string('uploadvideo', 'streamassign')) . '">';
-        $dropzonehtml .= '<input type="file" class="streamassign-upload-file-input" id="' . s($fileinputid) . '" accept="video/*" aria-hidden="true">';
+        $dropzonehtml .= '<input type="file" class="streamassign-upload-file-input" id="' . s($fileinputid) . '" accept="' . s(streamassign_get_accept_attribute($streamassign)) . '" aria-hidden="true">';
         $dropzonehtml .= '<div class="streamassign-upload-zone-inner">';
         $dropzonehtml .= '<span class="streamassign-upload-icon" aria-hidden="true">↓</span>';
         $dropzonehtml .= '<p class="streamassign-upload-text">' . s(get_string('uploadzonetext', 'streamassign')) . '</p>';
-        $dropzonehtml .= '<p class="streamassign-upload-hint">' . s(get_string('uploadzonehint', 'streamassign')) . '</p>';
+        $dropzonehtml .= '<p class="streamassign-upload-hint">' . s(get_string('uploadzonehint', 'streamassign', $maxbytesdisplay)) . '</p>';
         $dropzonehtml .= '<p class="streamassign-upload-filename" id="streamassign-upload-filename" style="display:none;"></p>';
         $dropzonehtml .= '<p class="streamassign-upload-ready-msg" id="streamassign-upload-ready-msg" style="display:none;"></p>';
         $dropzonehtml .= '</div>';
@@ -124,7 +148,7 @@ class submission_form extends \moodleform {
         $dropzonehtml .= '<div class="streamassign-upload-done" id="streamassign-upload-done" style="display:none;"></div>';
         $dropzonehtml .= '</label></div>';
         $mform->addElement('html', $dropzonehtml);
-        $mform->addElement('static', 'allowedformats', '', get_string('allowedformats', 'streamassign'));
+        $mform->addElement('static', 'allowedformats', '', $allowedformatsdescription);
 
         if ($hasexisting) {
             $mform->disabledIf('videotitle', 'submission_type_group', 'neq', 'upload');
@@ -148,6 +172,14 @@ class submission_form extends \moodleform {
      */
     public function validation($data, $files) {
         $errors = parent::validation($data, $files);
+        $customdata = $this->_customdata;
+        $maxvideos = isset($customdata->maxvideos) ? (int) $customdata->maxvideos : 1;
+        $submissioncount = isset($customdata->submissioncount) ? (int) $customdata->submissioncount : 0;
+        if ($maxvideos > 1 && $submissioncount >= $maxvideos) {
+            $errors['submissionlimit'] = get_string('maxvideosreached', 'streamassign', $maxvideos);
+            return $errors;
+        }
+
         $type = isset($data['submission_type_group']) ? $data['submission_type_group'] : (isset($data['submission_type']) ? $data['submission_type'] : 'upload');
 
         if ($type === 'existing') {

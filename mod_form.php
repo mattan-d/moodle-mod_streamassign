@@ -26,6 +26,7 @@ class mod_streamassign_mod_form extends moodleform_mod {
      * Form definition.
      */
     public function definition() {
+        global $CFG, $COURSE;
         $mform = $this->_form;
 
         $mform->addElement('header', 'general', get_string('general', 'form'));
@@ -45,6 +46,41 @@ class mod_streamassign_mod_form extends moodleform_mod {
         $mform->setDefault('preventlatesubmission', 1);
         $mform->addElement('advcheckbox', 'allowresubmission', get_string('allowresubmission', 'streamassign'));
         $mform->setDefault('allowresubmission', 1);
+        $maxoptions = streamassign_get_maxvideos_form_options();
+        $mform->addElement('select', 'maxvideos', get_string('maxvideos', 'streamassign'), $maxoptions);
+        $mform->setDefault('maxvideos', 1);
+        $mform->addHelpButton('maxvideos', 'maxvideos', 'streamassign');
+        $defaultmaxbytes = (int) get_config('mod_streamassign', 'maxbytes');
+        if ($defaultmaxbytes === 0) {
+            $defaultmaxbytes = 2147483648;
+        }
+        $sizechoices = get_max_upload_sizes($CFG->maxbytes, $COURSE->maxbytes, get_config('mod_streamassign', 'maxbytes'));
+        $mform->addElement('select', 'maxbytes', get_string('maximumsubmissionsize', 'streamassign'), $sizechoices);
+        $mform->addHelpButton('maxbytes', 'maximumsubmissionsize', 'streamassign');
+        $mform->setDefault('maxbytes', $defaultmaxbytes);
+        $mform->addElement('filetypes', 'filetypeslist', get_string('allowedfiletypes', 'streamassign'), [
+            'onlytypes' => streamassign_get_selectable_filetypes(),
+            'allowall' => false,
+        ]);
+        $mform->addHelpButton('filetypeslist', 'allowedfiletypes', 'streamassign');
+        $mform->setDefault('filetypeslist', streamassign_get_default_filetypes());
+
+        $mform->addElement('header', 'groupsubmissionsettings', get_string('groupsubmissionsettings', 'assign'));
+        $mform->addElement('selectyesno', 'teamsubmission', get_string('teamsubmission', 'assign'));
+        $mform->addHelpButton('teamsubmission', 'teamsubmission', 'assign');
+        $mform->addElement('selectyesno', 'preventsubmissionnotingroup', get_string('preventsubmissionnotingroup', 'assign'));
+        $mform->addHelpButton('preventsubmissionnotingroup', 'preventsubmissionnotingroup', 'assign');
+        $mform->hideIf('preventsubmissionnotingroup', 'teamsubmission', 'eq', 0);
+
+        $groupings = groups_get_all_groupings($COURSE->id);
+        $groupingoptions = [0 => get_string('none')];
+        foreach ($groupings as $grouping) {
+            $groupingoptions[$grouping->id] = $grouping->name;
+        }
+        $mform->addElement('select', 'teamsubmissiongroupingid', get_string('teamsubmissiongroupingid', 'assign'), $groupingoptions);
+        $mform->addHelpButton('teamsubmissiongroupingid', 'teamsubmissiongroupingid', 'assign');
+        $mform->hideIf('teamsubmissiongroupingid', 'teamsubmission', 'eq', 0);
+
         $mform->addElement('header', 'notificationsettings', get_string('notificationsettings', 'streamassign'));
         $mform->addElement('advcheckbox', 'emailalertstoteachers', get_string('notifygraderssubmission', 'streamassign'));
         $mform->setDefault('emailalertstoteachers', 1);
@@ -65,11 +101,36 @@ class mod_streamassign_mod_form extends moodleform_mod {
      */
     public function data_preprocessing(&$defaultvalues) {
         parent::data_preprocessing($defaultvalues);
+        if (empty($defaultvalues['maxvideos'])) {
+            $defaultvalues['maxvideos'] = 1;
+        }
+        if (empty($defaultvalues['maxbytes'])) {
+            $defaultmaxbytes = (int) get_config('mod_streamassign', 'maxbytes');
+            $defaultvalues['maxbytes'] = $defaultmaxbytes > 0 ? $defaultmaxbytes : 2147483648;
+        }
+        if (!isset($defaultvalues['filetypeslist']) || $defaultvalues['filetypeslist'] === '') {
+            $defaultvalues['filetypeslist'] = streamassign_get_default_filetypes();
+        }
         if (!empty($defaultvalues['timeopen'])) {
             $defaultvalues['timeopen'] = $defaultvalues['timeopen'];
         }
         if (!empty($defaultvalues['timeclose'])) {
             $defaultvalues['timeclose'] = $defaultvalues['timeclose'];
         }
+    }
+
+    /**
+     * Validate form data.
+     *
+     * @param array $data
+     * @param array $files
+     * @return array
+     */
+    public function validation($data, $files) {
+        $errors = parent::validation($data, $files);
+        if (empty(trim($data['filetypeslist'] ?? ''))) {
+            $errors['filetypeslist'] = get_string('required');
+        }
+        return $errors;
     }
 }

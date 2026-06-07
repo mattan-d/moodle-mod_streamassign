@@ -37,6 +37,7 @@ class restore_streamassign_activity_structure_step extends restore_activity_stru
     protected function define_structure() {
         $paths = [];
         $paths[] = new restore_path_element('streamassign', '/activity/streamassign');
+        $paths[] = new restore_path_element('streamassign_override', '/activity/streamassign/overrides/override');
         $paths[] = new restore_path_element('submission', '/activity/streamassign/submissions/submission');
         return $this->prepare_activity_structure($paths);
     }
@@ -60,6 +61,43 @@ class restore_streamassign_activity_structure_step extends restore_activity_stru
     }
 
     /**
+     * Process one override element.
+     *
+     * @param array $data Parsed element data
+     */
+    protected function process_streamassign_override($data) {
+        global $DB;
+
+        $data = (object) $data;
+        $oldid = $data->id;
+
+        $userinfo = $this->get_setting_value('userinfo');
+        if (!$userinfo && !is_null($data->userid)) {
+            return;
+        }
+
+        $groupinfo = $this->get_setting_value('groups');
+        if (!$groupinfo && !is_null($data->groupid)) {
+            return;
+        }
+
+        $data->streamassignid = $this->get_new_parentid('streamassign');
+
+        if (!is_null($data->userid)) {
+            $data->userid = $this->get_mappingid('user', $data->userid);
+        }
+        if (!is_null($data->groupid)) {
+            $data->groupid = $this->get_mappingid('group', $data->groupid);
+        }
+
+        $data->timeopen = $this->apply_date_offset($data->timeopen);
+        $data->timeclose = $this->apply_date_offset($data->timeclose);
+
+        $newitemid = $DB->insert_record('streamassign_overrides', $data);
+        $this->set_mapping('streamassign_override', $oldid, $newitemid);
+    }
+
+    /**
      * Process one submission element.
      *
      * @param array $data Parsed element data
@@ -69,10 +107,28 @@ class restore_streamassign_activity_structure_step extends restore_activity_stru
 
         $data = (object) $data;
         $data->streamassignid = $this->task->get_activityid();
-        $data->userid = $this->get_mappingid('user', $data->userid);
+        $data->groupid = isset($data->groupid) ? (int) $data->groupid : 0;
 
-        if ($data->userid === false) {
-            return;
+        if (!empty($data->groupid)) {
+            $data->groupid = $this->get_mappingid('group', $data->groupid);
+            if ($data->groupid === false) {
+                return;
+            }
+            $data->userid = 0;
+        } else {
+            $data->userid = $this->get_mappingid('user', $data->userid);
+            if ($data->userid === false) {
+                return;
+            }
+        }
+
+        if (!empty($data->submittedby)) {
+            $data->submittedby = $this->get_mappingid('user', $data->submittedby);
+            if ($data->submittedby === false) {
+                $data->submittedby = 0;
+            }
+        } else {
+            $data->submittedby = $data->userid ?: 0;
         }
 
         $DB->insert_record('streamassign_submission', $data);

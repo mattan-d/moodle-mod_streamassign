@@ -20,6 +20,7 @@
 require_once(__DIR__ . '/../../config.php');
 require_once(__DIR__ . '/lib.php');
 require_once(__DIR__ . '/locallib.php');
+require_once(__DIR__ . '/overridelib.php');
 
 global $DB, $USER, $PAGE, $OUTPUT;
 
@@ -43,6 +44,8 @@ require_login($course, true, $cm);
 $context = context_module::instance($cm->id);
 require_capability('mod/streamassign:view', $context);
 
+$streamassign = streamassign_get_effective_settings($streamassign, (int) $USER->id);
+
 $PAGE->set_url('/mod/streamassign/view.php', ['id' => $cm->id]);
 $PAGE->set_title(format_string($streamassign->name));
 $PAGE->set_heading(format_string($course->fullname));
@@ -52,9 +55,11 @@ $canedit = has_capability('mod/streamassign:addinstance', $context);
 $opens = $streamassign->timeopen > 0 && $timenow < $streamassign->timeopen;
 $closed = !empty($streamassign->preventlatesubmission) && $streamassign->timeclose > 0 && $timenow > $streamassign->timeclose;
 $cansubmit = has_capability('mod/streamassign:submit', $context) && !$opens && !$closed;
-
-$submission = streamassign_get_submission((int) $streamassign->id, (int) $USER->id);
-if ($submission && empty($streamassign->allowresubmission)) {
+$usersubmissions = streamassign_get_user_submissions((int) $streamassign->id, (int) $USER->id, $streamassign, (int) $course->id);
+$submissiongroup = streamassign_is_team_submission($streamassign)
+    ? streamassign_get_submission_group($streamassign, (int) $course->id, (int) $USER->id)
+    : null;
+if (!streamassign_user_can_submit($streamassign, (int) $USER->id, (int) $course->id)) {
     $cansubmit = false;
 }
 $streamurl = \mod_streamassign\stream_uploader::get_stream_base_url();
@@ -66,10 +71,33 @@ if ($cansubmit && $streamconfigured) {
     $uservideos = [];
     $userlist = \mod_streamassign\stream_uploader::get_user_videos($USER->email, 100, 0);
     if (!$userlist->error && !empty($userlist->videos)) {
-        $uservideos = $userlist->videos;
+        $submittedstreamids = array_map(function($s) {
+            return (int) $s->streamid;
+        }, $usersubmissions);
+        foreach ($userlist->videos as $v) {
+            $vid = (int) ($v['id'] ?? 0);
+            if ($vid > 0 && !in_array($vid, $submittedstreamids, true)) {
+                $uservideos[] = $v;
+            }
+        }
     }
     $uploadurl = (new moodle_url('/mod/streamassign/upload_video.php'))->out(false);
-    $customdata = (object) ['context' => $context, 'cmid' => $cm->id, 'uservideos' => $uservideos, 'uploadurl' => $uploadurl];
+    $maxvideos = streamassign_get_maxvideos($streamassign);
+    $submissioncount = count($usersubmissions);
+    $maxbytes = streamassign_get_maxbytes($streamassign, $course);
+    $customdata = (object) [
+        'context' => $context,
+        'cmid' => $cm->id,
+        'uservideos' => $uservideos,
+        'uploadurl' => $uploadurl,
+        'maxvideos' => $maxvideos,
+        'submissioncount' => $submissioncount,
+        'maxbytes' => $maxbytes,
+        'maxbytesdisplay' => display_size($maxbytes),
+        'streamassign' => $streamassign,
+        'allowedextensions' => streamassign_get_allowed_extensions($streamassign),
+        'allowedformatsdescription' => streamassign_get_allowedformats_description($streamassign),
+    ];
     $submissionform = new \mod_streamassign\submission_form($PAGE->url, $customdata);
     if (!empty($uservideos)) {
         $PAGE->requires->js_call_amd('mod_streamassign/videopicker', 'init', []);
@@ -159,46 +187,83 @@ if ($opens) {
 if ($closed) {
     echo $OUTPUT->notification(get_string('activityclosed', 'streamassign', userdate($streamassign->timeclose)), 'notifyinfo');
 }
+if (streamassign_is_team_submission($streamassign) && has_capability('mod/streamassign:submit', $context)) {
+    if ($submissiongroup) {
+        echo $OUTPUT->notification(get_string('yoursubmissiongroup', 'streamassign', format_string($submissiongroup->name)), 'notifyinfo');
+    } else if (!empty($streamassign->preventsubmissionnotingroup)) {
+        echo $OUTPUT->notification(get_string('notingroup', 'assign'), 'notifywarning');
+    }
+}
 
 if (!$streamconfigured) {
     echo $OUTPUT->notification(get_string('streamurl_required', 'streamassign'), 'notifyproblem');
 }
 
-if ($submission) {
-    echo $OUTPUT->heading(get_string('yoursubmission', 'streamassign'), 3);
-    $hasthumb = \mod_streamassign\stream_uploader::get_video_thumbnail_url((int) $submission->streamid) !== null;
-    $embedurl = $hasthumb ? \mod_streamassign\stream_uploader::get_embed_url_with_jwt((int) $submission->streamid, $USER, 7200) : null;
-    $watchurl = $streamurl ? $streamurl . '/watch/' . $submission->streamid : '';
-    $submissioninfo = [
-        'submittedon' => get_string('submittedon', 'streamassign') . ' ' . userdate($submission->timemodified),
-        'videotitle' => get_string('videotitle', 'streamassign') . ': ' . s($submission->videotitle ?: '-'),
-        'videoready' => $hasthumb,
-    ];
-    if ($hasthumb && $embedurl) {
-        $submissioninfo['embedurl'] = $embedurl;
-        $submissioninfo['embedwidth'] = 640;
-        $submissioninfo['embedheight'] = 360;
-        $submissioninfo['embedtitle'] = get_string('watchvideo', 'streamassign');
+if (!empty($usersubmissions)) {
+    $heading = count($usersubmissions) > 1 ? get_string('yoursubmissions', 'streamassign') : get_string('yoursubmission', 'streamassign');
+    if (streamassign_is_team_submission($streamassign) && $submissiongroup) {
+        $heading = get_string('groupsubmissions', 'streamassign', format_string($submissiongroup->name));
     }
-    if (!$hasthumb) {
-        $checkurl = new moodle_url('/mod/streamassign/check_thumbnail.php', ['id' => $cm->id, 'sesskey' => sesskey()]);
-        $submissioninfo['checkurl'] = $checkurl->out(false);
-        $submissioninfo['processingmessage'] = get_string('videoprocessing', 'streamassign');
-        $submissioninfo['nextcheckseconds'] = 30;
-        $submissioninfo['embedtitle'] = get_string('watchvideo', 'streamassign');
+    echo $OUTPUT->heading($heading, 3);
+    $maxvideos = streamassign_get_maxvideos($streamassign);
+    if ($maxvideos > 1) {
+        echo $OUTPUT->notification(get_string('submissioncount', 'streamassign', (object) [
+            'count' => count($usersubmissions),
+            'max' => $maxvideos,
+        ]), 'notifyinfo');
     }
-    if ($watchurl) {
-        $submissioninfo['watchurl'] = $watchurl;
-        $submissioninfo['watchlabel'] = get_string('watchvideo', 'streamassign');
+    foreach ($usersubmissions as $submission) {
+        echo html_writer::start_tag('div', ['class' => 'streamassign-submission-item mb-4']);
+        $hasthumb = \mod_streamassign\stream_uploader::get_video_thumbnail_url((int) $submission->streamid) !== null;
+        $embedurl = $hasthumb ? \mod_streamassign\stream_uploader::get_embed_url_with_jwt((int) $submission->streamid, $USER, 7200) : null;
+        $watchurl = $streamurl ? $streamurl . '/watch/' . $submission->streamid : '';
+        $submissioninfo = [
+            'submittedon' => get_string('submittedon', 'streamassign') . ' ' . userdate($submission->timemodified),
+            'videotitle' => get_string('videotitle', 'streamassign') . ': ' . s($submission->videotitle ?: '-'),
+            'videoready' => $hasthumb,
+        ];
+        if (streamassign_is_team_submission($streamassign) && !empty($submission->submittedby)) {
+            $submitter = $DB->get_record('user', ['id' => $submission->submittedby], '*', IGNORE_MISSING);
+            if ($submitter) {
+                if ((int) $submission->submittedby === (int) $USER->id) {
+                    $submissioninfo['submittedby'] = get_string('submittedbyyou', 'streamassign');
+                } else {
+                    $submissioninfo['submittedby'] = get_string('submittedby', 'streamassign', fullname($submitter));
+                }
+            }
+        }
+        if ($hasthumb && $embedurl) {
+            $submissioninfo['embedurl'] = $embedurl;
+            $submissioninfo['embedwidth'] = 640;
+            $submissioninfo['embedheight'] = 360;
+            $submissioninfo['embedtitle'] = get_string('watchvideo', 'streamassign');
+        }
+        if (!$hasthumb) {
+            $checkurl = new moodle_url('/mod/streamassign/check_thumbnail.php', [
+                'id' => $cm->id,
+                'submissionid' => $submission->id,
+                'sesskey' => sesskey(),
+            ]);
+            $submissioninfo['checkurl'] = $checkurl->out(false);
+            $submissioninfo['processingmessage'] = get_string('videoprocessing', 'streamassign');
+            $submissioninfo['nextcheckseconds'] = 30;
+            $submissioninfo['embedtitle'] = get_string('watchvideo', 'streamassign');
+            $submissioninfo['placeholderid'] = 'streamassign-embed-placeholder-' . (int) $submission->id;
+        }
+        if ($watchurl) {
+            $submissioninfo['watchurl'] = $watchurl;
+            $submissioninfo['watchlabel'] = get_string('watchvideo', 'streamassign');
+        }
+        echo $OUTPUT->render_from_template('mod_streamassign/submission_info', $submissioninfo);
+        echo html_writer::end_tag('div');
     }
-    echo $OUTPUT->render_from_template('mod_streamassign/submission_info', $submissioninfo);
 }
 
 if ($cansubmit && $streamconfigured && $submissionform) {
-    if (!$submission) {
+    if (empty($usersubmissions)) {
         echo $OUTPUT->heading(get_string('submitvideo', 'streamassign'), 3);
     } else if (!$canedit) {
-        echo $OUTPUT->notification(get_string('allowedformats', 'streamassign'), 'notifyinfo');
+        echo $OUTPUT->notification(streamassign_get_allowedformats_description($streamassign), 'notifyinfo');
     }
     $submissionform->display();
 }

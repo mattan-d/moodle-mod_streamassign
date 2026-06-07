@@ -23,6 +23,83 @@ require_once(__DIR__ . '/lib.php');
 require_once(__DIR__ . '/classes/stream_uploader.php');
 
 /**
+ * Save or replace a video submission record.
+ *
+ * @param stdClass $streamassign
+ * @param stdClass $cm
+ * @param stdClass $course
+ * @param int $streamid
+ * @param string $title
+ * @return stdClass {success, message}
+ */
+function streamassign_save_video_submission($streamassign, $cm, $course, $streamid, $title) {
+    global $USER, $DB;
+
+    $result = (object) ['success' => false, 'message' => ''];
+    $streamid = (int) $streamid;
+    if ($streamid <= 0) {
+        $result->message = get_string('uploaderror', 'streamassign');
+        return $result;
+    }
+
+    $target = streamassign_get_submission_target($streamassign, (int) $course->id, (int) $USER->id);
+    if (!empty($target->error)) {
+        $result->message = $target->error;
+        return $result;
+    }
+
+    $now = time();
+    $maxvideos = streamassign_get_maxvideos($streamassign);
+    $count = streamassign_count_submissions($streamassign, (int) $course->id, (int) $USER->id);
+    if ($count >= $maxvideos && !($maxvideos === 1 && !empty($streamassign->allowresubmission))) {
+        $result->message = get_string('maxvideosreached', 'streamassign', $maxvideos);
+        return $result;
+    }
+    if ($count >= 1 && empty($streamassign->allowresubmission) && $maxvideos <= 1) {
+        $result->message = get_string('resubmissionnotallowed', 'streamassign');
+        return $result;
+    }
+
+    $existsconditions = [
+        'streamassignid' => $streamassign->id,
+        'groupid' => $target->groupid,
+        'userid' => $target->userid,
+        'streamid' => $streamid,
+    ];
+    if ($DB->record_exists('streamassign_submission', $existsconditions)) {
+        $result->message = get_string('videodalreadysubmitted', 'streamassign');
+        return $result;
+    }
+
+    $replace = ($maxvideos === 1 && $count >= 1 && !empty($streamassign->allowresubmission));
+    $existing = $replace ? streamassign_get_latest_submission($streamassign, (int) $course->id, (int) $USER->id) : null;
+
+    if ($existing) {
+        $existing->streamid = $streamid;
+        $existing->videotitle = $title;
+        $existing->submittedby = $target->submittedby;
+        $existing->timemodified = $now;
+        $DB->update_record('streamassign_submission', $existing);
+    } else {
+        $DB->insert_record('streamassign_submission', (object) [
+            'streamassignid' => $streamassign->id,
+            'groupid' => $target->groupid,
+            'userid' => $target->userid,
+            'submittedby' => $target->submittedby,
+            'streamid' => $streamid,
+            'videotitle' => $title,
+            'timecreated' => $now,
+            'timemodified' => $now,
+        ]);
+    }
+
+    $islate = ($streamassign->timeclose > 0 && $now > (int) $streamassign->timeclose);
+    streamassign_notify_graders_submission($streamassign, $cm, $USER, $title, $islate, $target->group ?? null);
+    $result->success = true;
+    return $result;
+}
+
+/**
  * Notify graders that a student submitted a video.
  *
  * @param stdClass $streamassign Activity record.
@@ -30,6 +107,7 @@ require_once(__DIR__ . '/classes/stream_uploader.php');
  * @param stdClass $student User record of submitter.
  * @param string $videotitle Submitted video title.
  * @param bool $islate Whether this is a late submission.
+ * @param stdClass|null $group Group record when team submission.
  * @return void
  */
 function streamassign_notify_graders_submission(
@@ -37,7 +115,8 @@ function streamassign_notify_graders_submission(
     \stdClass $cm,
     \stdClass $student,
     string $videotitle,
-    bool $islate = false
+    bool $islate = false,
+    ?\stdClass $group = null
 ): void {
     global $DB;
 
@@ -62,6 +141,9 @@ function streamassign_notify_graders_submission(
     }
 
     $studentname = fullname($student);
+    if ($group) {
+        $studentname = format_string($group->name) . ' — ' . get_string('submittedby', 'streamassign', fullname($student));
+    }
     $activityname = format_string($streamassign->name, true, ['context' => $context]);
     $submittedtitle = trim($videotitle) !== '' ? $videotitle : get_string('videotitle', 'streamassign');
     $subject = get_string('messageprovider:submission', 'streamassign') . ': ' . $activityname;
@@ -130,11 +212,18 @@ function streamassign_handle_upload($context, $streamassign, $cm, $draftid, $vid
     }
     $file = reset($files);
 
-    $ext = strtolower(pathinfo($file->get_filename(), PATHINFO_EXTENSION));
-    $allowed = ['mp4', 'flv', 'webm', 'mkv', 'vob', 'ogv', 'ogg', 'avi', 'wmv', 'mov', 'mpeg', 'mpg'];
-    if (!in_array($ext, $allowed)) {
-        $result->message = get_string('uploaderror', 'streamassign') . ' ' . get_string('allowedformats', 'streamassign');
-        $result->debuginfo = 'invalid_extension: ' . $ext;
+    $course = $DB->get_record('course', ['id' => $streamassign->course], '*', MUST_EXIST);
+    $maxbytes = streamassign_get_maxbytes($streamassign, $course);
+    if ($file->get_filesize() > $maxbytes) {
+        $result->message = get_string('uploadtoolarge', 'streamassign', display_size($maxbytes));
+        $result->debuginfo = 'file_too_large';
+        return $result;
+    }
+
+    if (!streamassign_is_allowed_filename($file->get_filename(), $streamassign)) {
+        $result->message = get_string('uploaderror', 'streamassign') . ' '
+            . streamassign_get_allowedformats_description($streamassign);
+        $result->debuginfo = 'invalid_extension: ' . strtolower(pathinfo($file->get_filename(), PATHINFO_EXTENSION));
         return $result;
     }
 
@@ -166,30 +255,12 @@ function streamassign_handle_upload($context, $streamassign, $cm, $draftid, $vid
     }
 
     $now = time();
-    $submission = $DB->get_record('streamassign_submission', [
-        'streamassignid' => $streamassign->id,
-        'userid' => $USER->id,
-    ]);
     $title = $videotitle !== '' ? $videotitle : ($upload->topic ?? $file->get_filename());
-
-    if ($submission) {
-        $submission->streamid = $upload->streamid;
-        $submission->videotitle = $title;
-        $submission->timemodified = $now;
-        $DB->update_record('streamassign_submission', $submission);
-    } else {
-        $DB->insert_record('streamassign_submission', (object) [
-            'streamassignid' => $streamassign->id,
-            'userid' => $USER->id,
-            'streamid' => $upload->streamid,
-            'videotitle' => $title,
-            'timecreated' => $now,
-            'timemodified' => $now,
-        ]);
+    $result = streamassign_save_video_submission($streamassign, $cm, $course, (int) $upload->streamid, $title);
+    if (!$result->success) {
+        $result->debuginfo = $result->message;
+        return $result;
     }
-
-    $islate = ($streamassign->timeclose > 0 && $now > (int) $streamassign->timeclose);
-    streamassign_notify_graders_submission($streamassign, $cm, $USER, $title, $islate);
     $result->success = true;
     return $result;
 }
@@ -204,42 +275,12 @@ function streamassign_handle_upload($context, $streamassign, $cm, $draftid, $vid
  * @return stdClass { success: bool, message?: string }
  */
 function streamassign_handle_existing_video($streamassign, $cm, $streamid, $videotitle = '') {
-    global $USER, $DB;
+    global $DB;
 
     $result = (object) ['success' => false, 'message' => ''];
-    $streamid = (int) $streamid;
-    if ($streamid <= 0) {
-        $result->message = get_string('uploaderror', 'streamassign');
-        return $result;
-    }
-
-    $now = time();
-    $submission = $DB->get_record('streamassign_submission', [
-        'streamassignid' => $streamassign->id,
-        'userid' => $USER->id,
-    ]);
+    $course = $DB->get_record('course', ['id' => $streamassign->course], '*', MUST_EXIST);
     $title = trim($videotitle) !== '' ? trim($videotitle) : get_string('videotitle', 'streamassign');
-
-    if ($submission) {
-        $submission->streamid = $streamid;
-        $submission->videotitle = $title;
-        $submission->timemodified = $now;
-        $DB->update_record('streamassign_submission', $submission);
-    } else {
-        $DB->insert_record('streamassign_submission', (object) [
-            'streamassignid' => $streamassign->id,
-            'userid' => $USER->id,
-            'streamid' => $streamid,
-            'videotitle' => $title,
-            'timecreated' => $now,
-            'timemodified' => $now,
-        ]);
-    }
-
-    $islate = ($streamassign->timeclose > 0 && $now > (int) $streamassign->timeclose);
-    streamassign_notify_graders_submission($streamassign, $cm, $USER, $title, $islate);
-    $result->success = true;
-    return $result;
+    return streamassign_save_video_submission($streamassign, $cm, $course, (int) $streamid, $title);
 }
 
 /**

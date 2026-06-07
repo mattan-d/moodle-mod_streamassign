@@ -37,7 +37,16 @@ require_capability('mod/streamassign:view', $context);
 
 header('Content-Type: application/json; charset=utf-8');
 
-$submission = streamassign_get_submission((int) $streamassign->id, (int) $USER->id);
+$submission = null;
+$submissionid = optional_param('submissionid', 0, PARAM_INT);
+if ($submissionid > 0) {
+    $submission = $DB->get_record('streamassign_submission', ['id' => $submissionid, 'streamassignid' => $streamassign->id], '*', MUST_EXIST);
+if ((int) $submission->userid !== (int) $USER->id) {
+    require_capability('mod/streamassign:grade', $context);
+}
+} else {
+    $submission = streamassign_get_submission((int) $streamassign->id, (int) $USER->id);
+}
 if (!$submission) {
     echo json_encode(['ready' => false]);
     exit;

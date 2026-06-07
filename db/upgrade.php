@@ -77,5 +77,129 @@ function xmldb_streamassign_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026032400, 'streamassign');
     }
 
+    if ($oldversion < 2026052800) {
+        $table = new xmldb_table('streamassign');
+
+        $field = new xmldb_field('maxvideos', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '1', 'allowresubmission');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        $subtable = new xmldb_table('streamassign_submission');
+
+        $oldunique = new xmldb_index('streamassign_user', XMLDB_INDEX_UNIQUE, ['streamassignid', 'userid']);
+        if ($dbman->index_exists($subtable, $oldunique)) {
+            $dbman->drop_index($subtable, $oldunique);
+        }
+
+        $newindex = new xmldb_index('streamassign_user', XMLDB_INDEX_NOTUNIQUE, ['streamassignid', 'userid']);
+        if (!$dbman->index_exists($subtable, $newindex)) {
+            $dbman->add_index($subtable, $newindex);
+        }
+
+        $uniqueindex = new xmldb_index('streamassign_user_stream', XMLDB_INDEX_UNIQUE, ['streamassignid', 'userid', 'streamid']);
+        if (!$dbman->index_exists($subtable, $uniqueindex)) {
+            $dbman->add_index($subtable, $uniqueindex);
+        }
+
+        upgrade_mod_savepoint(true, 2026052800, 'streamassign');
+    }
+
+    if ($oldversion < 2026052810) {
+        $table = new xmldb_table('streamassign');
+
+        $field = new xmldb_field('maxbytes', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '2147483648', 'maxvideos');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        upgrade_mod_savepoint(true, 2026052810, 'streamassign');
+    }
+
+    if ($oldversion < 2026052812) {
+        $table = new xmldb_table('streamassign');
+
+        $field = new xmldb_field('filetypeslist', XMLDB_TYPE_TEXT, null, null, null, null, null, 'maxbytes');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        upgrade_mod_savepoint(true, 2026052812, 'streamassign');
+    }
+
+    if ($oldversion < 2026052813) {
+        $table = new xmldb_table('streamassign_overrides');
+
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+        $table->add_field('streamassignid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('groupid', XMLDB_TYPE_INTEGER, '10', null, null, null, null);
+        $table->add_field('userid', XMLDB_TYPE_INTEGER, '10', null, null, null, null);
+        $table->add_field('sortorder', XMLDB_TYPE_INTEGER, '10', null, null, null, null);
+        $table->add_field('timeopen', XMLDB_TYPE_INTEGER, '10', null, null, null, null);
+        $table->add_field('timeclose', XMLDB_TYPE_INTEGER, '10', null, null, null, null);
+
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+        $table->add_key('streamassignid', XMLDB_KEY_FOREIGN, ['streamassignid'], 'streamassign', ['id']);
+        $table->add_key('groupid', XMLDB_KEY_FOREIGN, ['groupid'], 'groups', ['id']);
+        $table->add_key('userid', XMLDB_KEY_FOREIGN, ['userid'], 'user', ['id']);
+
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
+
+        upgrade_mod_savepoint(true, 2026052813, 'streamassign');
+    }
+
+    if ($oldversion < 2026052815) {
+        $table = new xmldb_table('streamassign');
+
+        $field = new xmldb_field('teamsubmission', XMLDB_TYPE_INTEGER, '1', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '0', 'filetypeslist');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        $field = new xmldb_field('teamsubmissiongroupingid', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '0', 'teamsubmission');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        $field = new xmldb_field('preventsubmissionnotingroup', XMLDB_TYPE_INTEGER, '1', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '0', 'teamsubmissiongroupingid');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        $subtable = new xmldb_table('streamassign_submission');
+
+        $field = new xmldb_field('groupid', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '0', 'streamassignid');
+        if (!$dbman->field_exists($subtable, $field)) {
+            $dbman->add_field($subtable, $field);
+        }
+
+        $field = new xmldb_field('submittedby', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '0', 'userid');
+        if (!$dbman->field_exists($subtable, $field)) {
+            $dbman->add_field($subtable, $field);
+        }
+
+        // Backfill submittedby from userid for existing rows.
+        $DB->execute("UPDATE {streamassign_submission} SET submittedby = userid WHERE submittedby = 0 AND userid > 0");
+
+        $oldunique = new xmldb_index('streamassign_user_stream', XMLDB_INDEX_UNIQUE, ['streamassignid', 'userid', 'streamid']);
+        if ($dbman->index_exists($subtable, $oldunique)) {
+            $dbman->drop_index($subtable, $oldunique);
+        }
+
+        $groupindex = new xmldb_index('streamassign_group', XMLDB_INDEX_NOTUNIQUE, ['streamassignid', 'groupid']);
+        if (!$dbman->index_exists($subtable, $groupindex)) {
+            $dbman->add_index($subtable, $groupindex);
+        }
+
+        $newunique = new xmldb_index('streamassign_owner_stream', XMLDB_INDEX_UNIQUE, ['streamassignid', 'groupid', 'userid', 'streamid']);
+        if (!$dbman->index_exists($subtable, $newunique)) {
+            $dbman->add_index($subtable, $newunique);
+        }
+
+        upgrade_mod_savepoint(true, 2026052815, 'streamassign');
+    }
+
     return true;
 }
